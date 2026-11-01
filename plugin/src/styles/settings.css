@@ -982,60 +982,32 @@ button.tft-mini {
     }
 }
 
-/* Tabs: a column on the left on a computer, a drop-down on a phone. */
-.tft-layout {
-    display: grid;
-    grid-template-columns: 24rem minmax(0, 1fr);
-    gap: 2.4rem;
-    align-items: start;
+/* Quick Actions: dragging by the handle */
+.tft-sortlist {
+    position: relative;
 }
 
-.tft-main {
-    min-width: 0;
+.tft-grip {
+    cursor: grab;
+    touch-action: none;
 }
 
-.tft-layout > nav.tft-tabs {
-    position: sticky;
-    top: 9rem;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    gap: 0.4rem;
-    margin: 0;
+.tft-sort-row.tft-ghost {
+    position: fixed !important;
+    z-index: 100000;
+    box-sizing: border-box;
+    margin: 0 !important;
+    border-color: var(--tp-primary, #4f8bff);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
+    opacity: 0.97;
+    cursor: grabbing;
+    pointer-events: none;
+    transition: none !important;
+    transform: none !important;
 }
 
-.tft-layout > nav.tft-tabs button.tft-tab {
-    justify-content: flex-start;
-    width: 100%;
-    text-align: left;
-}
-
-select.tft-tabselect {
-    display: none;
-}
-
-@media (max-width: 900px) {
-    .tft-layout {
-        grid-template-columns: minmax(0, 1fr);
-        gap: 1.6rem;
-    }
-
-    .tft-layout > nav.tft-tabs {
-        display: none;
-    }
-
-    select.tft-tabselect {
-        display: block;
-        box-sizing: border-box;
-        width: 100%;
-        margin: 0;
-        padding: 1.2rem 1.4rem;
-        border: 1px solid var(--tp-border, var(--border-color));
-        border-radius: 12px;
-        color: var(--tp-text, var(--text-color));
-        font-size: 1.4rem;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        background-color: var(--tp-elevated, var(--mild-background-color));
-    }
+.tft-sort-row.tft-placeholder {
+    box-sizing: border-box;
+    border: 1px dashed var(--tp-primary, #4f8bff);
+    background: color-mix(in srgb, var(--tp-primary, #4f8bff) 8%, transparent);
 }

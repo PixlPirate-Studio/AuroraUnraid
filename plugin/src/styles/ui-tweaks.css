@@ -359,3 +359,31 @@ table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed) .tp-group-apps
 @keyframes tp-led-spin {
     to { transform: rotate(360deg); }
 }
+
+/* ---- Main menu: a drop-down instead of tabs to scroll sideways, on a phone or tablet */
+#menu select.tp-nav-select {
+    display: none;
+}
+
+@media (max-width: 1023px) {
+    #menu .nav-tile:not(.right) {
+        display: none !important;
+    }
+
+    #menu select.tp-nav-select {
+        display: block;
+        box-sizing: border-box;
+        flex: 1 1 auto;
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+        margin: 0.6rem 0;
+        padding: 1rem 1.4rem;
+        border: 1px solid var(--tp-border);
+        border-radius: 12px;
+        color: var(--tp-text);
+        font-size: 1.5rem;
+        font-weight: 700;
+        background-color: var(--tp-elevated);
+    }
+}

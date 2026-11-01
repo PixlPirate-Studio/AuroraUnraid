@@ -146,7 +146,9 @@ plg = f"""<?xml version='1.0' standalone='yes'?>
 <CHANGES>
 ###{version}
 - Settings page: the tabs are a drop-down menu on a phone-sized screen.
-- Settings page: the tabs are a column on the left on a computer and a drop-down menu on a phone.
+- Quick Actions: the lock button is on every page (away from the Dashboard it opens the Dashboard already unlocked).
+- Settings page, Quick Actions list: smooth dragging; a dashed space opens where the button will land and the others slide aside; works with a finger too.
+- Phones and tablets: the main menu (Dashboard, Main, Shares, ...) is a drop-down instead of tabs to scroll sideways.
 - Quick Actions list: the empty Disk Viewer and Stream Viewer entries are left out.
 - Docker tab: an LED beside each name (green running, red stopped, orange paused, a yellow turning ring while a container starts, stops or restarts).
 - Fixed: the switches on the settings page; the accent no longer colours the outline of the group panels on the Dashboard; the Disk Viewer card follows the theme colours.

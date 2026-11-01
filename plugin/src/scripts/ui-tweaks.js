@@ -481,6 +481,78 @@
     if (wanted && !dockerPorts) loadDockerPorts();
   }
 
+  // ---------------------------------------------------------------- Lock button on every page
+
+  // Unraid has the lock button (it unlocks the Dashboard so the tiles can be dragged) on the
+  // Dashboard only. Everywhere else this one stands in for it: it opens the Dashboard already
+  // unlocked, so the button is always in its place in the Quick Actions.
+  const UNLOCK_FLAG = 'auroraunraid.unlockDashboard';
+
+  function ensureLockButton() {
+    const box = quickBox();
+    if (!box || box.querySelector('.nav-item.LockButton')) return;
+    const item = el('div', 'nav-item LockButton tp-lock-standin');
+    item.dataset.tpLabel = 'Lock / unlock sortable items';
+    const anchor = el('a');
+    anchor.href = '/Dashboard';
+    anchor.title = 'Unlock sortable items (opens the Dashboard)';
+    anchor.append(el('b', 'icon-u-lock system'), el('span', '', 'Unlock sortable items'));
+    anchor.addEventListener('click', function (event) {
+      event.preventDefault();
+      try { sessionStorage.setItem(UNLOCK_FLAG, '1'); } catch (error) { /* private mode */ }
+      location.href = '/Dashboard';
+    });
+    item.append(anchor);
+    box.append(item);
+    applyQuickActions();
+  }
+
+  function applyDashboardUnlock() {
+    if (!/^\/Dashboard\/?$/.test(location.pathname)) return;
+    let flag = null;
+    try { flag = sessionStorage.getItem(UNLOCK_FLAG); } catch (error) { /* private mode */ }
+    if (!flag || typeof window.LockButton !== 'function') return;
+    try { sessionStorage.removeItem(UNLOCK_FLAG); } catch (error) { /* private mode */ }
+    // The Dashboard locks itself while it loads; unlock it when it has finished.
+    setTimeout(function () {
+      if (!/(^|;\s*)lockbutton=/.test(document.cookie)) window.LockButton();
+    }, 900);
+  }
+
+  // ---------------------------------------------------------------- Main menu as a drop-down on a phone
+
+  // Below 1024 pixels there is no sidebar and Unraid's tabs (Dashboard, Main, Shares, ...) run
+  // across the top, so far that they have to be scrolled sideways. There they become a drop-down.
+  function ensureNavSelect() {
+    const tiles = document.querySelectorAll('#menu .nav-tile:not(.right)');
+    if (!tiles.length) return;
+    const links = [];
+    tiles.forEach(function (tile) {
+      tile.querySelectorAll(':scope > .nav-item > a').forEach(function (anchor) {
+        if (anchor.textContent.trim()) links.push(anchor);
+      });
+    });
+    if (!links.length) return;
+    let select = document.querySelector('#menu select.tp-nav-select');
+    const signature = links.map(function (anchor) { return anchor.getAttribute('href') + '|' + anchor.textContent.trim(); }).join('\n');
+    if (select && select.dataset.signature !== signature) { select.remove(); select = null; }
+    if (!select) {
+      select = el('select', 'tp-nav-select');
+      select.setAttribute('aria-label', 'Go to');
+      select.dataset.signature = signature;
+      links.forEach(function (anchor, index) {
+        const option = el('option', '', anchor.textContent.replace(/\s+/g, ' ').trim());
+        option.value = String(index);
+        select.append(option);
+      });
+      // Clicking the real link keeps what Unraid does on a click (it remembers the tab).
+      select.addEventListener('change', function () { links[Number(select.value)].click(); });
+      tiles[0].parentElement.insertBefore(select, tiles[0]);
+    }
+    const active = links.findIndex(function (anchor) { return anchor.closest('.nav-item').classList.contains('active'); });
+    if (active !== -1) select.value = String(active);
+  }
+
   // ---------------------------------------------------------------- Run
 
   function run() {
@@ -492,6 +564,9 @@
     trimFooter();
     applyApps();
     applyDockerPorts();
+    ensureLockButton();
+    applyDashboardUnlock();
+    ensureNavSelect();
   }
 
   let timer = 0;

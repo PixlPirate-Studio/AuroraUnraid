@@ -206,7 +206,7 @@ function auroraSplit(value) {
 var auroraQa = { rows: [], list: null };
 function auroraQaSync() {
   var order = [], hidden = [];
-  auroraQa.list.querySelectorAll('.tft-sort-row').forEach(function (row) {
+  auroraQa.list.querySelectorAll('.tft-sort-row:not(.tft-placeholder)').forEach(function (row) {
     order.push(row.dataset.key);
     if (!row.querySelector('input[type=checkbox]').checked) hidden.push(row.dataset.key);
   });
@@ -243,7 +243,99 @@ function auroraQaBuild() {
   auroraQa.list = list;
   list.className = 'tft-sortlist';
   list.replaceChildren();
-  var dragging = null;
+  // Rows that change place slide to it instead of jumping: remember where they are, change the
+  // order, then play the move from the old place to the new one.
+  var flip = function (mutate) {
+    var rows = Array.prototype.slice.call(list.querySelectorAll('.tft-sort-row:not(.tft-ghost)'));
+    var first = rows.map(function (row) { return row.getBoundingClientRect(); });
+    rows.forEach(function (row) { row.style.transition = 'none'; row.style.transform = ''; });
+    mutate();
+    rows.forEach(function (row, index) {
+      var last = row.getBoundingClientRect();
+      var dx = first[index].left - last.left, dy = first[index].top - last.top;
+      if (dx || dy) row.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+    });
+    void list.offsetWidth;
+    rows.forEach(function (row) { row.style.transition = 'transform 180ms ease'; row.style.transform = ''; });
+  };
+  var scroller = function () {
+    for (var node = list.parentElement; node && node !== document.body; node = node.parentElement) {
+      var overflow = getComputedStyle(node).overflowY;
+      if ((overflow === 'auto' || overflow === 'scroll') && node.scrollHeight > node.clientHeight) return node;
+    }
+    return null;
+  };
+
+  // Dragging by the handle (mouse, pen and finger): the row follows the pointer, a dashed space
+  // shows where it will land, and the other rows slide aside while it is moved.
+  var startDrag = function (event, row) {
+    if (event.button) return;
+    event.preventDefault();
+    var box = row.getBoundingClientRect();
+    var offsetX = event.clientX - box.left, offsetY = event.clientY - box.top;
+    var placeholder = document.createElement('div');
+    placeholder.className = 'tft-sort-row tft-placeholder';
+    placeholder.style.height = box.height + 'px';
+    list.insertBefore(placeholder, row);
+    row.classList.add('tft-ghost');
+    row.style.width = box.width + 'px';
+    row.style.height = box.height + 'px';
+    var x = event.clientX, y = event.clientY, lastMove = 0;
+    document.body.style.userSelect = 'none';
+
+    var place = function () {
+      row.style.left = (x - offsetX) + 'px';
+      row.style.top = (y - offsetY) + 'px';
+      if (Date.now() - lastMove < 140) return;
+      var listBox = list.getBoundingClientRect();
+      var target = null;
+      Array.prototype.forEach.call(list.querySelectorAll('.tft-sort-row'), function (other) {
+        if (other === row || other === placeholder || target) return;
+        // The place a row has in the grid (not where a slide has drawn it for a moment).
+        var left = listBox.left + other.offsetLeft, top = listBox.top + other.offsetTop;
+        if (x >= left && x <= left + other.offsetWidth && y >= top && y <= top + other.offsetHeight) target = other;
+      });
+      if (!target) return;
+      var after = Boolean(placeholder.compareDocumentPosition(target) & Node.DOCUMENT_POSITION_FOLLOWING);
+      lastMove = Date.now();
+      flip(function () { list.insertBefore(placeholder, after ? target.nextSibling : target); });
+    };
+    row.style.left = box.left + 'px';
+    row.style.top = box.top + 'px';
+
+    var scrolling = setInterval(function () {
+      var step = y < 80 ? -14 : (y > window.innerHeight - 80 ? 14 : 0);
+      if (!step) return;
+      var container = scroller();
+      if (container) container.scrollTop += step; else window.scrollBy(0, step);
+      place();
+    }, 16);
+    var move = function (e) { x = e.clientX; y = e.clientY; place(); };
+    var finish = function () {
+      document.removeEventListener('pointermove', move);
+      document.removeEventListener('pointerup', finish);
+      document.removeEventListener('pointercancel', finish);
+      clearInterval(scrolling);
+      document.body.style.userSelect = '';
+      var from = row.getBoundingClientRect();
+      row.classList.remove('tft-ghost');
+      row.style.width = row.style.height = row.style.left = row.style.top = '';
+      list.insertBefore(row, placeholder);
+      placeholder.remove();
+      var to = row.getBoundingClientRect();
+      // The row settles into its place from where it was let go.
+      row.style.transition = 'none';
+      row.style.transform = 'translate(' + (from.left - to.left) + 'px,' + (from.top - to.top) + 'px)';
+      void row.offsetWidth;
+      row.style.transition = 'transform 180ms ease';
+      row.style.transform = '';
+      auroraQaSync();
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', finish);
+    document.addEventListener('pointercancel', finish);
+  };
+
   found.forEach(function (item) {
     var row = document.createElement('div');
     row.className = 'tft-sort-row';
@@ -267,42 +359,20 @@ function auroraQaBuild() {
     up.className = down.className = 'tft-move';
     up.title = 'Move up'; down.title = 'Move down';
     up.innerHTML = '<i class="fa fa-arrow-up"></i>'; down.innerHTML = '<i class="fa fa-arrow-down"></i>';
-    up.addEventListener('click', function () { if (row.previousElementSibling) { list.insertBefore(row, row.previousElementSibling); auroraQaSync(); } });
-    down.addEventListener('click', function () { if (row.nextElementSibling) { list.insertBefore(row.nextElementSibling, row); auroraQaSync(); } });
-    grip.addEventListener('mousedown', function () { row.draggable = true; });
-    row.addEventListener('dragstart', function (event) {
-      dragging = row;
-      row.classList.add('tft-dragging');
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', item.key);
-    });
-    row.addEventListener('dragend', function () {
-      row.draggable = false;
-      row.classList.remove('tft-dragging');
-      dragging = null;
+    up.addEventListener('click', function () {
+      if (!row.previousElementSibling) return;
+      flip(function () { list.insertBefore(row, row.previousElementSibling); });
       auroraQaSync();
     });
+    down.addEventListener('click', function () {
+      if (!row.nextElementSibling) return;
+      flip(function () { list.insertBefore(row.nextElementSibling, row); });
+      auroraQaSync();
+    });
+    grip.addEventListener('pointerdown', function (event) { startDrag(event, row); });
     row.append(grip, check, icon, label, up, down);
     list.append(row);
   });
-  list.ondragover = function (event) {
-    if (!dragging) return;
-    event.preventDefault();
-    // The list is a grid: the row nearest to the pointer decides, and the dragged row goes before
-    // or after it depending on which side of that row's middle the pointer is.
-    var nearest = null, best = Number.POSITIVE_INFINITY;
-    list.querySelectorAll('.tft-sort-row:not(.tft-dragging)').forEach(function (row) {
-      var box = row.getBoundingClientRect();
-      var dx = event.clientX - (box.left + box.width / 2), dy = event.clientY - (box.top + box.height / 2);
-      var distance = dx * dx + dy * dy;
-      if (distance < best) { best = distance; nearest = row; }
-    });
-    if (!nearest) return;
-    var box = nearest.getBoundingClientRect();
-    var sameRow = event.clientY >= box.top && event.clientY <= box.bottom;
-    var before = sameRow ? event.clientX < box.left + box.width / 2 : event.clientY < box.top;
-    if (before) list.insertBefore(dragging, nearest); else list.insertBefore(dragging, nearest.nextSibling);
-  };
 }
 function auroraQaReset() {
   document.getElementById('tft-qa-order').value = '';
@@ -628,16 +698,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // One card per tab; the nodes between two markers move into it (their fields stay in the form).
   var panes = [];
-  var tail = [];
-  var group = function (list, collectTail) {
+  var group = function (list) {
     var pane = null;
-    var tailing = false;
     list.forEach(function (node) {
       var marker = node.matches('.tft-tab-marker') ? node : node.querySelector('.tft-tab-marker');
       if (marker) {
         pane = null;
         var id = marker.dataset.tab;
-        tailing = Boolean(collectTail) && id === 'all';
         if (id !== 'all' && meta[id]) {
           pane = document.createElement('section');
           pane.className = 'tft-pane';
@@ -660,14 +727,13 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
       if (pane) pane.append(node);
-      else if (tailing) tail.push(node);
     });
   };
   var inside = Array.prototype.slice.call(form.children);
   var outside = [];
   for (var next = form.nextElementSibling; next; next = next.nextElementSibling) outside.push(next);
   var firstPane = null;
-  group(inside, true);
+  group(inside);
   firstPane = panes[0];
   group(outside);
 
@@ -675,22 +741,16 @@ document.addEventListener('DOMContentLoaded', function () {
   bar.className = 'tft-tabs';
   bar.setAttribute('role', 'tablist');
   var buttons = {};
-  // The tabs are a column on the left on a computer and this drop-down on a phone (the CSS shows
-  // one or the other). The cards and the Apply row go into the column on the right.
-  var layout = document.createElement('div');
-  layout.className = 'tft-layout';
-  var main = document.createElement('div');
-  main.className = 'tft-main';
-  var select = document.createElement('select');
-  select.className = 'tft-tabselect';
-  select.setAttribute('aria-label', 'Settings section');
+  var bar = document.createElement('nav');
+  bar.className = 'tft-tabs';
+  bar.setAttribute('role', 'tablist');
+  var buttons = {};
   var show = function (id) {
     panes.forEach(function (pane) { pane.hidden = pane.dataset.tftTab !== id; });
     Object.keys(buttons).forEach(function (key) {
       buttons[key].classList.toggle('tft-tab-on', key === id);
       buttons[key].setAttribute('aria-selected', key === id ? 'true' : 'false');
     });
-    select.value = id;
     try { localStorage.setItem('auroraunraid.settingsTab', id); } catch (error) { /* private mode */ }
   };
   tabs.forEach(function (tab) {
@@ -703,16 +763,8 @@ document.addEventListener('DOMContentLoaded', function () {
     button.addEventListener('click', function () { show(tab[0]); });
     buttons[tab[0]] = button;
     bar.append(button);
-    var option = document.createElement('option');
-    option.value = tab[0];
-    option.textContent = tab[1];
-    select.append(option);
   });
-  select.addEventListener('change', function () { show(select.value); });
-  form.insertBefore(layout, firstPane || form.firstChild);
-  layout.append(bar, select, main);
-  panes.forEach(function (pane) { main.append(pane); });
-  tail.forEach(function (node) { main.append(node); });
+  form.insertBefore(bar, firstPane || form.firstChild);
   var saved = null;
   try { saved = localStorage.getItem('auroraunraid.settingsTab'); } catch (error) { /* private mode */ }
   show(saved && buttons[saved] ? saved : 'appearance');
