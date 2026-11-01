@@ -3,7 +3,7 @@
 
 <PLUGIN name="AuroraUnraid"
         author="Tunefish, modified by thepixlpirate"
-        version="2026.10.31.2041"
+        version="2026.11.01.0212"
         launch="Settings/AuroraUnraidSettings"
         pluginURL="https://raw.githubusercontent.com/thepixlpirate/AuroraUnraid/release/AuroraUnraid.plg"
         support="https://github.com/thepixlpirate/AuroraUnraid/issues"
@@ -11,7 +11,9 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.10.31.2041
+###2026.11.01.0212
+- Settings page: the tabs are a drop-down menu on a phone-sized screen.
+- Settings page: the tabs are a column on the left on a computer and a drop-down menu on a phone.
 - Quick Actions list: the empty Disk Viewer and Stream Viewer entries are left out.
 - Docker tab: an LED beside each name (green running, red stopped, orange paused, a yellow turning ring while a container starts, stops or restarts).
 - Fixed: the switches on the settings page; the accent no longer colours the outline of the group panels on the Dashboard; the Disk Viewer card follows the theme colours.
@@ -93,10 +95,10 @@ for OLD in Tunefish-Future-Theme Aurora-Theme; do
   fi
 done
 old=$(sed -n 's/^[[:space:]]*version="\([^"]*\)".*/\1/p' /boot/config/plugins/AuroraUnraid.plg 2>/dev/null | head -n 1)
-if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.10.31.2041" ]]; then
+if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.11.01.0212" ]]; then
   from=$(sed -n 's/.*"from":"\([^"]*\)".*/\1/p' /boot/config/plugins/AuroraUnraid/updated.json 2>/dev/null)
   [[ "$from" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ ]] || from=$old
-  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.10.31.2041" "$(date +%s)" > /boot/config/plugins/AuroraUnraid/updated.json
+  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.11.01.0212" "$(date +%s)" > /boot/config/plugins/AuroraUnraid/updated.json
 fi
 cat > /usr/local/emhttp/plugins/AuroraUnraid/AuroraUnraid.page <<'AURORA_UNRAID_EOF'
 Menu="Buttons"
@@ -408,7 +410,7 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
 <?php if ($auroraClasses): ?>
 <script>document.documentElement.classList.add(...<?= json_encode($auroraClasses) ?>);</script>
 <?php endif; ?>
-<?php if (substr('2026.10.31.2041', -4) === '-dev'): ?>
+<?php if (substr('2026.11.01.0212', -4) === '-dev'): ?>
 <?php // A dev build (version "...-dev", set by plugin/build.py) is installed: a "Dev" badge in the
       // top bar, linking to the settings, where the update channel goes back to stable. ?>
 <style id="aurora-dev-badge">
@@ -430,7 +432,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var badge = document.createElement('a');
   badge.className = 'tp-dev-badge';
   badge.href = '/Settings/AuroraUnraidSettings';
-  badge.title = 'AuroraUnraid dev build 2026.10.31.2041: a test version, installed because the update channel is set to dev builds. Click to change it.';
+  badge.title = 'AuroraUnraid dev build 2026.11.01.0212: a test version, installed because the update channel is set to dev builds. Click to change it.';
   badge.innerHTML = '<i aria-hidden="true"></i><span>Aurora</span><b>Dev</b>';
   // Where it goes: with the sidebar shown, on its own line under Unraid's version (the version
   // row has room for the version and its update notice only); otherwise in
@@ -1117,13 +1119,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // One card per tab; the nodes between two markers move into it (their fields stay in the form).
   var panes = [];
-  var group = function (list) {
+  var tail = [];
+  var group = function (list, collectTail) {
     var pane = null;
+    var tailing = false;
     list.forEach(function (node) {
       var marker = node.matches('.tft-tab-marker') ? node : node.querySelector('.tft-tab-marker');
       if (marker) {
         pane = null;
         var id = marker.dataset.tab;
+        tailing = Boolean(collectTail) && id === 'all';
         if (id !== 'all' && meta[id]) {
           pane = document.createElement('section');
           pane.className = 'tft-pane';
@@ -1146,13 +1151,14 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
       if (pane) pane.append(node);
+      else if (tailing) tail.push(node);
     });
   };
   var inside = Array.prototype.slice.call(form.children);
   var outside = [];
   for (var next = form.nextElementSibling; next; next = next.nextElementSibling) outside.push(next);
   var firstPane = null;
-  group(inside);
+  group(inside, true);
   firstPane = panes[0];
   group(outside);
 
@@ -1160,12 +1166,22 @@ document.addEventListener('DOMContentLoaded', function () {
   bar.className = 'tft-tabs';
   bar.setAttribute('role', 'tablist');
   var buttons = {};
+  // The tabs are a column on the left on a computer and this drop-down on a phone (the CSS shows
+  // one or the other). The cards and the Apply row go into the column on the right.
+  var layout = document.createElement('div');
+  layout.className = 'tft-layout';
+  var main = document.createElement('div');
+  main.className = 'tft-main';
+  var select = document.createElement('select');
+  select.className = 'tft-tabselect';
+  select.setAttribute('aria-label', 'Settings section');
   var show = function (id) {
     panes.forEach(function (pane) { pane.hidden = pane.dataset.tftTab !== id; });
     Object.keys(buttons).forEach(function (key) {
       buttons[key].classList.toggle('tft-tab-on', key === id);
       buttons[key].setAttribute('aria-selected', key === id ? 'true' : 'false');
     });
+    select.value = id;
     try { localStorage.setItem('auroraunraid.settingsTab', id); } catch (error) { /* private mode */ }
   };
   tabs.forEach(function (tab) {
@@ -1178,8 +1194,16 @@ document.addEventListener('DOMContentLoaded', function () {
     button.addEventListener('click', function () { show(tab[0]); });
     buttons[tab[0]] = button;
     bar.append(button);
+    var option = document.createElement('option');
+    option.value = tab[0];
+    option.textContent = tab[1];
+    select.append(option);
   });
-  form.insertBefore(bar, firstPane || form.firstChild);
+  select.addEventListener('change', function () { show(select.value); });
+  form.insertBefore(layout, firstPane || form.firstChild);
+  layout.append(bar, select, main);
+  panes.forEach(function (pane) { main.append(pane); });
+  tail.forEach(function (node) { main.append(node); });
   var saved = null;
   try { saved = localStorage.getItem('auroraunraid.settingsTab'); } catch (error) { /* private mode */ }
   show(saved && buttons[saved] ? saved : 'appearance');
@@ -17673,6 +17697,64 @@ button.tft-mini {
         display: none;
     }
 }
+
+/* Tabs: a column on the left on a computer, a drop-down on a phone. */
+.tft-layout {
+    display: grid;
+    grid-template-columns: 24rem minmax(0, 1fr);
+    gap: 2.4rem;
+    align-items: start;
+}
+
+.tft-main {
+    min-width: 0;
+}
+
+.tft-layout > nav.tft-tabs {
+    position: sticky;
+    top: 9rem;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    margin: 0;
+}
+
+.tft-layout > nav.tft-tabs button.tft-tab {
+    justify-content: flex-start;
+    width: 100%;
+    text-align: left;
+}
+
+select.tft-tabselect {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .tft-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.6rem;
+    }
+
+    .tft-layout > nav.tft-tabs {
+        display: none;
+    }
+
+    select.tft-tabselect {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        margin: 0;
+        padding: 1.2rem 1.4rem;
+        border: 1px solid var(--tp-border, var(--border-color));
+        border-radius: 12px;
+        color: var(--tp-text, var(--text-color));
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background-color: var(--tp-elevated, var(--mild-background-color));
+    }
+}
 AURORA_UNRAID_EOF
 cat > /usr/local/emhttp/plugins/AuroraUnraid/styles/stats.css <<'AURORA_UNRAID_EOF'
 /* Stats page. Chart colours: series 1 follows the theme's primary colour, series 2 is an amber
@@ -24839,7 +24921,7 @@ cat > /boot/config/plugins/AuroraUnraid/stats.cron <<'AURORA_UNRAID_EOF'
 AURORA_UNRAID_EOF
 /usr/bin/php /usr/local/emhttp/plugins/AuroraUnraid/scripts/schedule.php
 echo ""
-echo "AuroraUnraid 2026.10.31.2041 is installed."
+echo "AuroraUnraid 2026.11.01.0212 is installed."
 echo "Settings: Settings > User Utilities > AuroraUnraid"
 echo ""
 ]]>
