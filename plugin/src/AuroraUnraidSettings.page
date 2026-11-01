@@ -628,13 +628,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // One card per tab; the nodes between two markers move into it (their fields stay in the form).
   var panes = [];
-  var group = function (list) {
+  var tail = [];
+  var group = function (list, collectTail) {
     var pane = null;
+    var tailing = false;
     list.forEach(function (node) {
       var marker = node.matches('.tft-tab-marker') ? node : node.querySelector('.tft-tab-marker');
       if (marker) {
         pane = null;
         var id = marker.dataset.tab;
+        tailing = Boolean(collectTail) && id === 'all';
         if (id !== 'all' && meta[id]) {
           pane = document.createElement('section');
           pane.className = 'tft-pane';
@@ -657,13 +660,14 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
       if (pane) pane.append(node);
+      else if (tailing) tail.push(node);
     });
   };
   var inside = Array.prototype.slice.call(form.children);
   var outside = [];
   for (var next = form.nextElementSibling; next; next = next.nextElementSibling) outside.push(next);
   var firstPane = null;
-  group(inside);
+  group(inside, true);
   firstPane = panes[0];
   group(outside);
 
@@ -671,12 +675,22 @@ document.addEventListener('DOMContentLoaded', function () {
   bar.className = 'tft-tabs';
   bar.setAttribute('role', 'tablist');
   var buttons = {};
+  // The tabs are a column on the left on a computer and this drop-down on a phone (the CSS shows
+  // one or the other). The cards and the Apply row go into the column on the right.
+  var layout = document.createElement('div');
+  layout.className = 'tft-layout';
+  var main = document.createElement('div');
+  main.className = 'tft-main';
+  var select = document.createElement('select');
+  select.className = 'tft-tabselect';
+  select.setAttribute('aria-label', 'Settings section');
   var show = function (id) {
     panes.forEach(function (pane) { pane.hidden = pane.dataset.tftTab !== id; });
     Object.keys(buttons).forEach(function (key) {
       buttons[key].classList.toggle('tft-tab-on', key === id);
       buttons[key].setAttribute('aria-selected', key === id ? 'true' : 'false');
     });
+    select.value = id;
     try { localStorage.setItem('auroraunraid.settingsTab', id); } catch (error) { /* private mode */ }
   };
   tabs.forEach(function (tab) {
@@ -689,8 +703,16 @@ document.addEventListener('DOMContentLoaded', function () {
     button.addEventListener('click', function () { show(tab[0]); });
     buttons[tab[0]] = button;
     bar.append(button);
+    var option = document.createElement('option');
+    option.value = tab[0];
+    option.textContent = tab[1];
+    select.append(option);
   });
-  form.insertBefore(bar, firstPane || form.firstChild);
+  select.addEventListener('change', function () { show(select.value); });
+  form.insertBefore(layout, firstPane || form.firstChild);
+  layout.append(bar, select, main);
+  panes.forEach(function (pane) { main.append(pane); });
+  tail.forEach(function (node) { main.append(node); });
   var saved = null;
   try { saved = localStorage.getItem('auroraunraid.settingsTab'); } catch (error) { /* private mode */ }
   show(saved && buttons[saved] ? saved : 'appearance');

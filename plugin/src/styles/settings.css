@@ -981,3 +981,61 @@ button.tft-mini {
         display: none;
     }
 }
+
+/* Tabs: a column on the left on a computer, a drop-down on a phone. */
+.tft-layout {
+    display: grid;
+    grid-template-columns: 24rem minmax(0, 1fr);
+    gap: 2.4rem;
+    align-items: start;
+}
+
+.tft-main {
+    min-width: 0;
+}
+
+.tft-layout > nav.tft-tabs {
+    position: sticky;
+    top: 9rem;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0.4rem;
+    margin: 0;
+}
+
+.tft-layout > nav.tft-tabs button.tft-tab {
+    justify-content: flex-start;
+    width: 100%;
+    text-align: left;
+}
+
+select.tft-tabselect {
+    display: none;
+}
+
+@media (max-width: 900px) {
+    .tft-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.6rem;
+    }
+
+    .tft-layout > nav.tft-tabs {
+        display: none;
+    }
+
+    select.tft-tabselect {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        margin: 0;
+        padding: 1.2rem 1.4rem;
+        border: 1px solid var(--tp-border, var(--border-color));
+        border-radius: 12px;
+        color: var(--tp-text, var(--text-color));
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background-color: var(--tp-elevated, var(--mild-background-color));
+    }
+}
