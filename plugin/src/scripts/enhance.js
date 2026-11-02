@@ -1336,19 +1336,34 @@
       const used = String(cell ? cell.textContent : '').split('/')[0].trim().match(/^([\d.,]+)\s*([KMGT]?i?B)$/i);
       return used ? number(used[1]) * (UNITS[used[2].toUpperCase()] || 1) : 0;
     }
-    function sortBy(column) {
-      const direction = sortState && sortState.column === column ? -sortState.direction : (column === 'name' ? 1 : -1);
+    // The chosen sort is kept in this browser, so it is still there after a reload. A CPU or
+    // Memory sort is made again a few seconds after loading, when the first figures are in.
+    const SORT_KEY = 'auroraunraid.dockerSort';
+    let pendingSort = null;
+    try {
+      const saved = JSON.parse(localStorage.getItem(SORT_KEY) || 'null');
+      if (saved && ['name', 'cpu', 'mem'].includes(saved.column) && (saved.direction === 1 || saved.direction === -1)) pendingSort = saved;
+    } catch (error) { /* nothing saved, or storage is off */ }
+    function buildSort(column, direction) {
       const items = [...list.querySelectorAll('td.ct-name:not(.folder-name)')].map(function (cell) { return describe(cell.parentElement); });
       items.sort(function (a, b) {
         const x = sortValue(a, column);
         const y = sortValue(b, column);
         return direction * (column === 'name' ? collator.compare(x, y) : x - y) || collator.compare(a.name, b.name);
       });
-      sortState = { column: column, direction: direction, rank: new Map(items.map(function (item, index) { return [item.name, index]; })) };
+      return { column: column, direction: direction, rank: new Map(items.map(function (item, index) { return [item.name, index]; })) };
+    }
+    function showSortArrows(column, direction) {
       headRow.querySelectorAll('.tp-sort-arrow').forEach(function (arrow) {
         const own = arrow.parentElement.classList.contains('tp-c-' + column);
         arrow.textContent = own ? (direction > 0 ? '\u25B2' : '\u25BC') : '';
       });
+    }
+    function sortBy(column) {
+      const direction = sortState && sortState.column === column ? -sortState.direction : (column === 'name' ? 1 : -1);
+      sortState = buildSort(column, direction);
+      showSortArrows(column, direction);
+      try { localStorage.setItem(SORT_KEY, JSON.stringify({ column: column, direction: direction })); } catch (error) { /* storage is off */ }
       render();
     }
 
@@ -1527,6 +1542,19 @@
       // Containers only: a FolderView folder row has a name cell of its own (td.folder-name).
       const rows = [...list.querySelectorAll('td.ct-name:not(.folder-name)')].map(function (cell) { return describe(cell.parentElement); });
       if (!rows.length) return;
+      if (pendingSort) {
+        const saved = pendingSort;
+        pendingSort = null;
+        sortState = buildSort(saved.column, saved.direction);
+        showSortArrows(saved.column, saved.direction);
+        if (saved.column !== 'name') {
+          setTimeout(function () {
+            if (!sortState || sortState.column !== saved.column) return;
+            sortState = buildSort(saved.column, saved.direction);
+            render();
+          }, 4000);
+        }
+      }
       formatCpu(rows);
       // Long names end in "…" (enhance.css); the whole name is the tooltip. A container with
       // an update gets the orange dot on its icon.

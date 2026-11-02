@@ -519,6 +519,33 @@
     }, 900);
   }
 
+  // ---------------------------------------------------------------- Pages of the main menu
+
+  // The pages in the menu (Dashboard, Main, Shares, ...), by the first part of their address.
+  // Hiding one only takes its entry out of the menu (the sidebar and the phone drop-down); the
+  // page can still be opened by its address. Settings stays, so this plugin's settings can
+  // always be reached.
+  const KEEP_PAGES = new Set(['Settings']);
+
+  function navPages() {
+    const pages = [];
+    document.querySelectorAll('#menu .nav-tile:not(.right) > .nav-item').forEach(function (item) {
+      const anchor = item.querySelector(':scope > a');
+      if (!anchor) return;
+      let key = '';
+      try { key = (new URL(anchor.getAttribute('href'), location.origin).pathname.split('/').filter(Boolean)[0] || ''); } catch (error) { return; }
+      key = key.replace(/[^A-Za-z0-9_.:-]+/g, '_');
+      const label = anchor.textContent.replace(/\s+/g, ' ').trim();
+      if (key && label) pages.push({ key: key, label: label, node: item, locked: KEEP_PAGES.has(key) });
+    });
+    return pages;
+  }
+
+  function applyPages() {
+    const hidden = new Set((UI.hidePages || []).filter(function (key) { return !KEEP_PAGES.has(key); }));
+    navPages().forEach(function (page) { page.node.classList.toggle('tp-hidden-item', hidden.has(page.key)); });
+  }
+
   // ---------------------------------------------------------------- Main menu as a drop-down on a phone
 
   // Below 1024 pixels there is no sidebar and Unraid's tabs (Dashboard, Main, Shares, ...) run
@@ -529,7 +556,7 @@
     const links = [];
     tiles.forEach(function (tile) {
       tile.querySelectorAll(':scope > .nav-item > a').forEach(function (anchor) {
-        if (anchor.textContent.trim()) links.push(anchor);
+        if (anchor.textContent.trim() && !tile.contains(anchor.closest('.nav-item.tp-hidden-item'))) links.push(anchor);
       });
     });
     if (!links.length) return;
@@ -553,6 +580,69 @@
     if (active !== -1) select.value = String(active);
   }
 
+  // ---------------------------------------------------------------- Docker: update count and "Force update"
+
+  // The number of containers with an update waiting, on the "Check for Updates" button. "Check
+  // for Updates" makes Unraid reload the list, which fills Unraid's own list of containers
+  // (window.docker); the count follows it.
+  function applyUpdateBadge() {
+    if (!/^\/Docker\/?$/.test(location.pathname)) return;
+    const button = document.getElementById('checkAll');
+    if (!button || !button.parentElement) return;
+    let wrap = button.parentElement;
+    if (!wrap.classList.contains('tp-badge-wrap')) {
+      wrap = el('span', 'tp-badge-wrap');
+      button.parentElement.insertBefore(wrap, button);
+      wrap.append(button);
+    }
+    let badge = wrap.querySelector('.tp-update-badge');
+    if (!badge) {
+      badge = el('span', 'tp-update-badge');
+      wrap.append(badge);
+    }
+    const list = Array.isArray(window.docker) ? window.docker : [];
+    const count = list.filter(function (container) { return container.update === 1 || container.update === 2; }).length;
+    // Only write when something changed: a change of the text is seen by the observer that runs
+    // this function, which would then run it again, and again.
+    if (badge.textContent !== String(count)) badge.textContent = String(count);
+    const title = count + (count === 1 ? ' update available' : ' updates available');
+    if (badge.title !== title) badge.title = title;
+    const hide = count === 0 || button.style.display === 'none';
+    if (badge.hidden !== hide) badge.hidden = hide;
+  }
+
+  // The "..." menu of a container gets "Force update" (Unraid has it in the Advanced view only).
+  // The menu is built by Unraid's addDockerContainerContext; it is wrapped to add the entry
+  // just before the menu is attached.
+  function patchDockerContext() {
+    const original = window.addDockerContainerContext;
+    if (typeof original !== 'function' || original.tpPatched || !window.context) return;
+    const patched = function (container, image, template, started, paused, update) {
+      const context = window.context;
+      const attach = context.attach;
+      context.attach = function (selector, options) {
+        context.attach = attach;
+        try {
+          // Containers made by Unraid's Docker manager have a template; others cannot be updated here.
+          if (template && update !== 1 && Array.isArray(options)) {
+            const label = typeof window._ === 'function' ? window._('Force update') : 'Force update';
+            const logs = options.findIndex(function (entry) { return entry && entry.icon === 'fa-navicon'; });
+            const at = logs > 0 && options[logs - 1].divider ? logs - 1 : options.length;
+            options.splice(at, 0, {
+              text: label,
+              icon: 'fa-cloud-download',
+              action: function (event) { event.preventDefault(); window.updateContainer(container); },
+            });
+          }
+        } catch (error) { console.error('Aurora: force update entry', error); }
+        return attach.apply(context, arguments);
+      };
+      try { return original.apply(this, arguments); } finally { context.attach = attach; }
+    };
+    patched.tpPatched = true;
+    window.addDockerContainerContext = patched;
+  }
+
   // ---------------------------------------------------------------- Run
 
   function run() {
@@ -566,7 +656,10 @@
     applyDockerPorts();
     ensureLockButton();
     applyDashboardUnlock();
+    applyPages();
     ensureNavSelect();
+    applyUpdateBadge();
+    patchDockerContext();
   }
 
   let timer = 0;
@@ -579,7 +672,7 @@
   }
 
   // For the settings page.
-  window.auroraTweaks = { quickItems: quickItems, quickKey: quickKey, quickLabel: quickLabel, quickIcon: quickIcon, quickShown: quickShown, fetchPanels: fetchPanels, run: run };
+  window.auroraTweaks = { quickItems: quickItems, quickKey: quickKey, quickLabel: quickLabel, quickIcon: quickIcon, quickShown: quickShown, navPages: navPages, fetchPanels: fetchPanels, run: run };
 
   try { run(); } catch (error) { console.error('AuroraUnraid:', error); }
   // Unraid's header parts, the Docker list and the Dashboard tiles draw themselves after the page.

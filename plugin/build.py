@@ -146,6 +146,10 @@ plg = f"""<?xml version='1.0' standalone='yes'?>
 <CHANGES>
 ###{version}
 - Settings page: the tabs are a drop-down menu on a phone-sized screen.
+- Docker tab: the chosen sort (Application, CPU, Memory) is kept after a reload.
+- Settings: switches to take pages out of the main menu (Settings always stays, so this plugin's settings can be reached).
+- Phones: adding or updating a container no longer makes the page zoom out to the desktop layout.
+- Docker tab: the number of containers with an update waiting shows on the "Check for Updates" button; the "..." menu of a container has "Force update" (it was in the Advanced view only).
 - Quick Actions: the lock button is on every page (away from the Dashboard it opens the Dashboard already unlocked).
 - Settings page, Quick Actions list: smooth dragging; a dashed space opens where the button will land and the others slide aside; works with a finger too.
 - Phones and tablets: the main menu (Dashboard, Main, Shares, ...) is a drop-down instead of tabs to scroll sideways.

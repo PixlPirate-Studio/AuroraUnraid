@@ -96,6 +96,12 @@ _(Sidebar)_:
 > Only for the sidebar layout. The Quick Actions go under the "Connected server" card (or at the
 > very top when that is hidden), or stay at the bottom of the sidebar.
 
+_(Menu pages)_:
+: <input type="hidden" name="hide_pages" id="tft-hide-pages" value="<?= htmlspecialchars($aurora['hide_pages'] ?? '') ?>"><div id="tft-pages" class="tft-toggles">Loading…</div>
+
+> Switch off a page to take it out of the menu (the sidebar, and the drop-down on a phone). **Settings** always
+> stays, because this plugin's settings are opened from it. A hidden page can still be opened by its address.
+
 _(Top bar items)_:
 : <div class="tft-toggles"><?php foreach (['theme_switch' => 'Dark / light mode button', 'uptime' => 'Uptime and license status', 'server_icon' => 'Server icon', 'server_name' => 'Server name', 'bell' => 'Notification bell', 'menu' => 'Menu (hamburger)'] as $auroraKey => $auroraText) { echo '<input type="hidden" name="show_' . $auroraKey . '" value="no"><label class="tft-check tft-check-inline"><input type="checkbox" name="show_' . $auroraKey . '" value="yes"' . (($aurora['show_' . $auroraKey] ?? 'yes') === 'yes' ? ' checked' : '') . '> ' . htmlspecialchars(_($auroraText)) . '</label>'; } ?></div>
 
@@ -521,6 +527,37 @@ function auroraTiles() {
   }).catch(function () { box.textContent = 'The Settings and Tools pages could not be read.'; });
 }
 
+// ---- Pages of the main menu: a switch per page. Settings is locked on (it leads to this page).
+function auroraPages() {
+  var box = document.getElementById('tft-pages');
+  var field = document.getElementById('tft-hide-pages');
+  var tweaks = window.auroraTweaks;
+  if (!tweaks || !tweaks.navPages) { box.textContent = 'The page list is not available (is the theme switched off for this browser?).'; return; }
+  var hidden = auroraSplit(field.value);
+  var sync = function () {
+    var now = [];
+    box.querySelectorAll('input[data-key]').forEach(function (check) { if (!check.checked && !check.disabled) now.push(check.dataset.key); });
+    // Pages that are not in the menu right now keep their saved choice.
+    hidden.forEach(function (key) { if (key !== 'Settings' && !box.querySelector('input[data-key="' + key + '"]') && now.indexOf(key) === -1) now.push(key); });
+    field.value = now.join(',');
+    auroraAnnounce(field);
+  };
+  box.replaceChildren();
+  tweaks.navPages().forEach(function (page) {
+    var label = document.createElement('label');
+    label.className = 'tft-check tft-check-inline';
+    var check = document.createElement('input');
+    check.type = 'checkbox';
+    check.dataset.key = page.key;
+    check.checked = page.locked || hidden.indexOf(page.key) === -1;
+    check.disabled = page.locked;
+    if (page.locked) label.title = 'Always shown: the settings of this plugin are opened from here';
+    check.addEventListener('change', sync);
+    label.append(check, document.createTextNode(' ' + page.label + (page.locked ? ' (always shown)' : '')));
+    box.append(label);
+  });
+}
+
 // The Quick Actions are drawn by the theme's script after the page is parsed; wait for it.
 document.addEventListener('DOMContentLoaded', function () {
   var tries = 0;
@@ -528,6 +565,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (window.auroraTweaks || tries++ > 40) {
       auroraQaBuild();
       auroraTiles();
+      auroraPages();
     } else setTimeout(wait, 100);
   })();
 });
