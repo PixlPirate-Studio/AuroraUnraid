@@ -3,7 +3,7 @@
 
 <PLUGIN name="AuroraUnraid"
         author="Tunefish, modified by thepixlpirate"
-        version="2026.11.01.1808"
+        version="2026.11.02.2030"
         launch="Settings/AuroraUnraidSettings"
         pluginURL="https://raw.githubusercontent.com/thepixlpirate/AuroraUnraid/release/AuroraUnraid.plg"
         support="https://github.com/thepixlpirate/AuroraUnraid/issues"
@@ -11,8 +11,12 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.11.01.1808
+###2026.11.02.2030
 - Settings page: the tabs are a drop-down menu on a phone-sized screen.
+- Docker tab: the chosen sort (Application, CPU, Memory) is kept after a reload.
+- Settings: switches to take pages out of the main menu (Settings always stays, so this plugin's settings can be reached).
+- Phones: adding or updating a container no longer makes the page zoom out to the desktop layout.
+- Docker tab: the number of containers with an update waiting shows on the "Check for Updates" button; the "..." menu of a container has "Force update" (it was in the Advanced view only).
 - Quick Actions: the lock button is on every page (away from the Dashboard it opens the Dashboard already unlocked).
 - Settings page, Quick Actions list: smooth dragging; a dashed space opens where the button will land and the others slide aside; works with a finger too.
 - Phones and tablets: the main menu (Dashboard, Main, Shares, ...) is a drop-down instead of tabs to scroll sideways.
@@ -97,10 +101,10 @@ for OLD in Tunefish-Future-Theme Aurora-Theme; do
   fi
 done
 old=$(sed -n 's/^[[:space:]]*version="\([^"]*\)".*/\1/p' /boot/config/plugins/AuroraUnraid.plg 2>/dev/null | head -n 1)
-if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.11.01.1808" ]]; then
+if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.11.02.2030" ]]; then
   from=$(sed -n 's/.*"from":"\([^"]*\)".*/\1/p' /boot/config/plugins/AuroraUnraid/updated.json 2>/dev/null)
   [[ "$from" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ ]] || from=$old
-  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.11.01.1808" "$(date +%s)" > /boot/config/plugins/AuroraUnraid/updated.json
+  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.11.02.2030" "$(date +%s)" > /boot/config/plugins/AuroraUnraid/updated.json
 fi
 cat > /usr/local/emhttp/plugins/AuroraUnraid/AuroraUnraid.page <<'AURORA_UNRAID_EOF'
 Menu="Buttons"
@@ -216,6 +220,8 @@ $auroraUi = [
     'qaHidden' => $auroraList($aurora['qa_hidden'] ?? ''),
     'hideSettings' => $auroraList($aurora['hide_settings'] ?? ''),
     'hideTools' => $auroraList($aurora['hide_tools'] ?? ''),
+    // The Settings page can never be hidden: this plugin's settings are opened from it.
+    'hidePages' => array_values(array_diff($auroraList($aurora['hide_pages'] ?? ''), ['Settings'])),
     'logo' => ['mode' => $auroraLogoMode, 'url' => $auroraLogoUrl, 'target' => (($aurora['logo_target'] ?? 'self') === 'blank') ? 'blank' : 'self'],
 ];
 $auroraHidden = json_decode((string) @file_get_contents("$auroraCustomDir/hidden-groups.json"), true);
@@ -239,6 +245,14 @@ document.documentElement.classList.add(...<?= json_encode($auroraTweakClasses) ?
 <?php endif; ?>
 // Set before the page is drawn: the Quick Actions wait for their final order (ui-tweaks.js,
 // with a fallback here), and the Apps menu keeps its folded state.
+// On a phone the page keeps its own width: a long line of output (adding a container) must not
+// make the browser zoom out and show the desktop layout.
+try {
+  if (Math.min(screen.width, screen.height) < 1024) {
+    var aurViewport = document.querySelector('meta[name="viewport"]');
+    if (aurViewport) aurViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, minimum-scale=1.0');
+  }
+} catch (error) { /* no screen information */ }
 document.documentElement.classList.add('tp-qa-pending');
 setTimeout(function () { document.documentElement.classList.remove('tp-qa-pending'); }, 5000);
 try { if (localStorage.getItem('auroraunraid.caCollapsed') === '1') document.documentElement.classList.add('tp-ca-collapsed'); } catch (error) { /* private mode */ }
@@ -412,7 +426,7 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
 <?php if ($auroraClasses): ?>
 <script>document.documentElement.classList.add(...<?= json_encode($auroraClasses) ?>);</script>
 <?php endif; ?>
-<?php if (substr('2026.11.01.1808', -4) === '-dev'): ?>
+<?php if (substr('2026.11.02.2030', -4) === '-dev'): ?>
 <?php // A dev build (version "...-dev", set by plugin/build.py) is installed: a "Dev" badge in the
       // top bar, linking to the settings, where the update channel goes back to stable. ?>
 <style id="aurora-dev-badge">
@@ -434,7 +448,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var badge = document.createElement('a');
   badge.className = 'tp-dev-badge';
   badge.href = '/Settings/AuroraUnraidSettings';
-  badge.title = 'AuroraUnraid dev build 2026.11.01.1808: a test version, installed because the update channel is set to dev builds. Click to change it.';
+  badge.title = 'AuroraUnraid dev build 2026.11.02.2030: a test version, installed because the update channel is set to dev builds. Click to change it.';
   badge.innerHTML = '<i aria-hidden="true"></i><span>Aurora</span><b>Dev</b>';
   // Where it goes: with the sidebar shown, on its own line under Unraid's version (the version
   // row has room for the version and its update notice only); otherwise in
@@ -588,6 +602,12 @@ _(Sidebar)_:
 
 > Only for the sidebar layout. The Quick Actions go under the "Connected server" card (or at the
 > very top when that is hidden), or stay at the bottom of the sidebar.
+
+_(Menu pages)_:
+: <input type="hidden" name="hide_pages" id="tft-hide-pages" value="<?= htmlspecialchars($aurora['hide_pages'] ?? '') ?>"><div id="tft-pages" class="tft-toggles">Loading…</div>
+
+> Switch off a page to take it out of the menu (the sidebar, and the drop-down on a phone). **Settings** always
+> stays, because this plugin's settings are opened from it. A hidden page can still be opened by its address.
 
 _(Top bar items)_:
 : <div class="tft-toggles"><?php foreach (['theme_switch' => 'Dark / light mode button', 'uptime' => 'Uptime and license status', 'server_icon' => 'Server icon', 'server_name' => 'Server name', 'bell' => 'Notification bell', 'menu' => 'Menu (hamburger)'] as $auroraKey => $auroraText) { echo '<input type="hidden" name="show_' . $auroraKey . '" value="no"><label class="tft-check tft-check-inline"><input type="checkbox" name="show_' . $auroraKey . '" value="yes"' . (($aurora['show_' . $auroraKey] ?? 'yes') === 'yes' ? ' checked' : '') . '> ' . htmlspecialchars(_($auroraText)) . '</label>'; } ?></div>
@@ -1014,6 +1034,37 @@ function auroraTiles() {
   }).catch(function () { box.textContent = 'The Settings and Tools pages could not be read.'; });
 }
 
+// ---- Pages of the main menu: a switch per page. Settings is locked on (it leads to this page).
+function auroraPages() {
+  var box = document.getElementById('tft-pages');
+  var field = document.getElementById('tft-hide-pages');
+  var tweaks = window.auroraTweaks;
+  if (!tweaks || !tweaks.navPages) { box.textContent = 'The page list is not available (is the theme switched off for this browser?).'; return; }
+  var hidden = auroraSplit(field.value);
+  var sync = function () {
+    var now = [];
+    box.querySelectorAll('input[data-key]').forEach(function (check) { if (!check.checked && !check.disabled) now.push(check.dataset.key); });
+    // Pages that are not in the menu right now keep their saved choice.
+    hidden.forEach(function (key) { if (key !== 'Settings' && !box.querySelector('input[data-key="' + key + '"]') && now.indexOf(key) === -1) now.push(key); });
+    field.value = now.join(',');
+    auroraAnnounce(field);
+  };
+  box.replaceChildren();
+  tweaks.navPages().forEach(function (page) {
+    var label = document.createElement('label');
+    label.className = 'tft-check tft-check-inline';
+    var check = document.createElement('input');
+    check.type = 'checkbox';
+    check.dataset.key = page.key;
+    check.checked = page.locked || hidden.indexOf(page.key) === -1;
+    check.disabled = page.locked;
+    if (page.locked) label.title = 'Always shown: the settings of this plugin are opened from here';
+    check.addEventListener('change', sync);
+    label.append(check, document.createTextNode(' ' + page.label + (page.locked ? ' (always shown)' : '')));
+    box.append(label);
+  });
+}
+
 // The Quick Actions are drawn by the theme's script after the page is parsed; wait for it.
 document.addEventListener('DOMContentLoaded', function () {
   var tries = 0;
@@ -1021,6 +1072,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (window.auroraTweaks || tries++ > 40) {
       auroraQaBuild();
       auroraTiles();
+      auroraPages();
     } else setTimeout(wait, 100);
   })();
 });
@@ -1326,6 +1378,7 @@ logo_target="self"
 show_connected_server="yes"
 sidebar_qa="bottom"
 show_copyright="yes"
+hide_pages=""
 AURORA_UNRAID_EOF
 cat > /usr/local/emhttp/plugins/AuroraUnraid/fonts/inter-LICENSE.txt <<'AURORA_UNRAID_EOF'
 Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
@@ -7774,19 +7827,34 @@ cat > /usr/local/emhttp/plugins/AuroraUnraid/scripts/enhance.js <<'AURORA_UNRAID
       const used = String(cell ? cell.textContent : '').split('/')[0].trim().match(/^([\d.,]+)\s*([KMGT]?i?B)$/i);
       return used ? number(used[1]) * (UNITS[used[2].toUpperCase()] || 1) : 0;
     }
-    function sortBy(column) {
-      const direction = sortState && sortState.column === column ? -sortState.direction : (column === 'name' ? 1 : -1);
+    // The chosen sort is kept in this browser, so it is still there after a reload. A CPU or
+    // Memory sort is made again a few seconds after loading, when the first figures are in.
+    const SORT_KEY = 'auroraunraid.dockerSort';
+    let pendingSort = null;
+    try {
+      const saved = JSON.parse(localStorage.getItem(SORT_KEY) || 'null');
+      if (saved && ['name', 'cpu', 'mem'].includes(saved.column) && (saved.direction === 1 || saved.direction === -1)) pendingSort = saved;
+    } catch (error) { /* nothing saved, or storage is off */ }
+    function buildSort(column, direction) {
       const items = [...list.querySelectorAll('td.ct-name:not(.folder-name)')].map(function (cell) { return describe(cell.parentElement); });
       items.sort(function (a, b) {
         const x = sortValue(a, column);
         const y = sortValue(b, column);
         return direction * (column === 'name' ? collator.compare(x, y) : x - y) || collator.compare(a.name, b.name);
       });
-      sortState = { column: column, direction: direction, rank: new Map(items.map(function (item, index) { return [item.name, index]; })) };
+      return { column: column, direction: direction, rank: new Map(items.map(function (item, index) { return [item.name, index]; })) };
+    }
+    function showSortArrows(column, direction) {
       headRow.querySelectorAll('.tp-sort-arrow').forEach(function (arrow) {
         const own = arrow.parentElement.classList.contains('tp-c-' + column);
         arrow.textContent = own ? (direction > 0 ? '\u25B2' : '\u25BC') : '';
       });
+    }
+    function sortBy(column) {
+      const direction = sortState && sortState.column === column ? -sortState.direction : (column === 'name' ? 1 : -1);
+      sortState = buildSort(column, direction);
+      showSortArrows(column, direction);
+      try { localStorage.setItem(SORT_KEY, JSON.stringify({ column: column, direction: direction })); } catch (error) { /* storage is off */ }
       render();
     }
 
@@ -7965,6 +8033,19 @@ cat > /usr/local/emhttp/plugins/AuroraUnraid/scripts/enhance.js <<'AURORA_UNRAID
       // Containers only: a FolderView folder row has a name cell of its own (td.folder-name).
       const rows = [...list.querySelectorAll('td.ct-name:not(.folder-name)')].map(function (cell) { return describe(cell.parentElement); });
       if (!rows.length) return;
+      if (pendingSort) {
+        const saved = pendingSort;
+        pendingSort = null;
+        sortState = buildSort(saved.column, saved.direction);
+        showSortArrows(saved.column, saved.direction);
+        if (saved.column !== 'name') {
+          setTimeout(function () {
+            if (!sortState || sortState.column !== saved.column) return;
+            sortState = buildSort(saved.column, saved.direction);
+            render();
+          }, 4000);
+        }
+      }
       formatCpu(rows);
       // Long names end in "…" (enhance.css); the whole name is the tooltip. A container with
       // an update gets the orange dot on its icon.
@@ -11409,6 +11490,33 @@ cat > /usr/local/emhttp/plugins/AuroraUnraid/scripts/ui-tweaks.js <<'AURORA_UNRA
     }, 900);
   }
 
+  // ---------------------------------------------------------------- Pages of the main menu
+
+  // The pages in the menu (Dashboard, Main, Shares, ...), by the first part of their address.
+  // Hiding one only takes its entry out of the menu (the sidebar and the phone drop-down); the
+  // page can still be opened by its address. Settings stays, so this plugin's settings can
+  // always be reached.
+  const KEEP_PAGES = new Set(['Settings']);
+
+  function navPages() {
+    const pages = [];
+    document.querySelectorAll('#menu .nav-tile:not(.right) > .nav-item').forEach(function (item) {
+      const anchor = item.querySelector(':scope > a');
+      if (!anchor) return;
+      let key = '';
+      try { key = (new URL(anchor.getAttribute('href'), location.origin).pathname.split('/').filter(Boolean)[0] || ''); } catch (error) { return; }
+      key = key.replace(/[^A-Za-z0-9_.:-]+/g, '_');
+      const label = anchor.textContent.replace(/\s+/g, ' ').trim();
+      if (key && label) pages.push({ key: key, label: label, node: item, locked: KEEP_PAGES.has(key) });
+    });
+    return pages;
+  }
+
+  function applyPages() {
+    const hidden = new Set((UI.hidePages || []).filter(function (key) { return !KEEP_PAGES.has(key); }));
+    navPages().forEach(function (page) { page.node.classList.toggle('tp-hidden-item', hidden.has(page.key)); });
+  }
+
   // ---------------------------------------------------------------- Main menu as a drop-down on a phone
 
   // Below 1024 pixels there is no sidebar and Unraid's tabs (Dashboard, Main, Shares, ...) run
@@ -11419,7 +11527,7 @@ cat > /usr/local/emhttp/plugins/AuroraUnraid/scripts/ui-tweaks.js <<'AURORA_UNRA
     const links = [];
     tiles.forEach(function (tile) {
       tile.querySelectorAll(':scope > .nav-item > a').forEach(function (anchor) {
-        if (anchor.textContent.trim()) links.push(anchor);
+        if (anchor.textContent.trim() && !tile.contains(anchor.closest('.nav-item.tp-hidden-item'))) links.push(anchor);
       });
     });
     if (!links.length) return;
@@ -11443,6 +11551,69 @@ cat > /usr/local/emhttp/plugins/AuroraUnraid/scripts/ui-tweaks.js <<'AURORA_UNRA
     if (active !== -1) select.value = String(active);
   }
 
+  // ---------------------------------------------------------------- Docker: update count and "Force update"
+
+  // The number of containers with an update waiting, on the "Check for Updates" button. "Check
+  // for Updates" makes Unraid reload the list, which fills Unraid's own list of containers
+  // (window.docker); the count follows it.
+  function applyUpdateBadge() {
+    if (!/^\/Docker\/?$/.test(location.pathname)) return;
+    const button = document.getElementById('checkAll');
+    if (!button || !button.parentElement) return;
+    let wrap = button.parentElement;
+    if (!wrap.classList.contains('tp-badge-wrap')) {
+      wrap = el('span', 'tp-badge-wrap');
+      button.parentElement.insertBefore(wrap, button);
+      wrap.append(button);
+    }
+    let badge = wrap.querySelector('.tp-update-badge');
+    if (!badge) {
+      badge = el('span', 'tp-update-badge');
+      wrap.append(badge);
+    }
+    const list = Array.isArray(window.docker) ? window.docker : [];
+    const count = list.filter(function (container) { return container.update === 1 || container.update === 2; }).length;
+    // Only write when something changed: a change of the text is seen by the observer that runs
+    // this function, which would then run it again, and again.
+    if (badge.textContent !== String(count)) badge.textContent = String(count);
+    const title = count + (count === 1 ? ' update available' : ' updates available');
+    if (badge.title !== title) badge.title = title;
+    const hide = count === 0 || button.style.display === 'none';
+    if (badge.hidden !== hide) badge.hidden = hide;
+  }
+
+  // The "..." menu of a container gets "Force update" (Unraid has it in the Advanced view only).
+  // The menu is built by Unraid's addDockerContainerContext; it is wrapped to add the entry
+  // just before the menu is attached.
+  function patchDockerContext() {
+    const original = window.addDockerContainerContext;
+    if (typeof original !== 'function' || original.tpPatched || !window.context) return;
+    const patched = function (container, image, template, started, paused, update) {
+      const context = window.context;
+      const attach = context.attach;
+      context.attach = function (selector, options) {
+        context.attach = attach;
+        try {
+          // Containers made by Unraid's Docker manager have a template; others cannot be updated here.
+          if (template && update !== 1 && Array.isArray(options)) {
+            const label = typeof window._ === 'function' ? window._('Force update') : 'Force update';
+            const logs = options.findIndex(function (entry) { return entry && entry.icon === 'fa-navicon'; });
+            const at = logs > 0 && options[logs - 1].divider ? logs - 1 : options.length;
+            options.splice(at, 0, {
+              text: label,
+              icon: 'fa-cloud-download',
+              action: function (event) { event.preventDefault(); window.updateContainer(container); },
+            });
+          }
+        } catch (error) { console.error('Aurora: force update entry', error); }
+        return attach.apply(context, arguments);
+      };
+      try { return original.apply(this, arguments); } finally { context.attach = attach; }
+    };
+    patched.tpPatched = true;
+    window.addDockerContainerContext = patched;
+  }
+
   // ---------------------------------------------------------------- Run
 
   function run() {
@@ -11456,7 +11627,10 @@ cat > /usr/local/emhttp/plugins/AuroraUnraid/scripts/ui-tweaks.js <<'AURORA_UNRA
     applyDockerPorts();
     ensureLockButton();
     applyDashboardUnlock();
+    applyPages();
     ensureNavSelect();
+    applyUpdateBadge();
+    patchDockerContext();
   }
 
   let timer = 0;
@@ -11469,7 +11643,7 @@ cat > /usr/local/emhttp/plugins/AuroraUnraid/scripts/ui-tweaks.js <<'AURORA_UNRA
   }
 
   // For the settings page.
-  window.auroraTweaks = { quickItems: quickItems, quickKey: quickKey, quickLabel: quickLabel, quickIcon: quickIcon, quickShown: quickShown, fetchPanels: fetchPanels, run: run };
+  window.auroraTweaks = { quickItems: quickItems, quickKey: quickKey, quickLabel: quickLabel, quickIcon: quickIcon, quickShown: quickShown, navPages: navPages, fetchPanels: fetchPanels, run: run };
 
   try { run(); } catch (error) { console.error('AuroraUnraid:', error); }
   // Unraid's header parts, the Docker list and the Dashboard tiles draw themselves after the page.
@@ -17855,6 +18029,11 @@ button.tft-mini {
     box-sizing: border-box;
     border: 1px dashed var(--tp-primary, #4f8bff);
     background: color-mix(in srgb, var(--tp-primary, #4f8bff) 8%, transparent);
+}
+
+.tft-pane input[type="checkbox"]:disabled {
+    opacity: 0.55;
+    cursor: not-allowed !important;
 }
 AURORA_UNRAID_EOF
 cat > /usr/local/emhttp/plugins/AuroraUnraid/styles/stats.css <<'AURORA_UNRAID_EOF'
@@ -24720,6 +24899,56 @@ table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed) .tp-group-apps
         background-color: var(--tp-elevated);
     }
 }
+
+/* ---- Docker tab: the number of updates on the "Check for Updates" button */
+.tp-badge-wrap {
+    position: relative;
+    display: inline-block;
+}
+
+.tp-update-badge {
+    position: absolute;
+    top: -0.9rem;
+    right: -0.9rem;
+    box-sizing: border-box;
+    min-width: 2.2rem;
+    height: 2.2rem;
+    padding: 0 0.6rem;
+    border-radius: 999px;
+    color: var(--tp-primary-text, #fff);
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 2.2rem;
+    text-align: center;
+    background: var(--tp-primary, #4f8bff);
+    box-shadow: 0 0 0 2px var(--tp-bg, #0a0c11);
+    pointer-events: none;
+}
+
+.tp-update-badge[hidden] {
+    display: none;
+}
+
+/* ---- Phones and tablets: the output of adding or updating a container wraps instead of making
+   the page wider than the screen (the browser then zoomed out to the desktop layout). */
+@media (max-width: 1023px) {
+    fieldset,
+    pre,
+    p.logLine,
+    #swaltext {
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+        white-space: pre-wrap !important;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+}
+
+.tft-pane input[type="checkbox"]:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
 AURORA_UNRAID_EOF
 cat > /usr/local/emhttp/plugins/AuroraUnraid/styles/updated.css <<'AURORA_UNRAID_EOF'
 /* "AuroraUnraid updated" dialog (scripts/updated.js). Loaded only after an update, also with
@@ -25050,7 +25279,7 @@ cat > /boot/config/plugins/AuroraUnraid/stats.cron <<'AURORA_UNRAID_EOF'
 AURORA_UNRAID_EOF
 /usr/bin/php /usr/local/emhttp/plugins/AuroraUnraid/scripts/schedule.php
 echo ""
-echo "AuroraUnraid 2026.11.01.1808 is installed."
+echo "AuroraUnraid 2026.11.02.2030 is installed."
 echo "Settings: Settings > User Utilities > AuroraUnraid"
 echo ""
 ]]>
