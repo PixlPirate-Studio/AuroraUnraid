@@ -240,6 +240,8 @@ function auroraQaBuild() {
   if (domKeys.indexOf('LockButton') === -1) found.push({ key: 'LockButton', label: 'Lock / unlock sortable items', icon: null, note: ' (Dashboard only)' });
   // Saved buttons that are not on this page right now stay in the list, so nothing is lost.
   saved.concat(hidden).forEach(function (key) {
+    // Stream Viewer and Disk Viewer buttons are never part of this list.
+    if (/^(StreamViewerButton|DiskViewerButton)/.test(key)) return;
     if (domKeys.indexOf(key) === -1 && !found.some(function (item) { return item.key === key; })) found.push({ key: key, label: key.replace(/^(href|text):/, ''), icon: null, note: ' (not on this page)' });
   });
   found.sort(function (a, b) {

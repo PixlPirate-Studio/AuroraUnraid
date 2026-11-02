@@ -146,6 +146,7 @@ plg = f"""<?xml version='1.0' standalone='yes'?>
 <CHANGES>
 ###{version}
 - Settings page: the tabs are a drop-down menu on a phone-sized screen.
+- Quick Actions: the buttons of the Stream Viewer and Disk Viewer plugins are always out of the menu and are not in the settings list (their Dashboard tiles and pages are untouched).
 - Docker tab: the chosen sort (Application, CPU, Memory) is kept after a reload.
 - Settings: switches to take pages out of the main menu (Settings always stays, so this plugin's settings can be reached).
 - Phones: adding or updating a container no longer makes the page zoom out to the desktop layout.

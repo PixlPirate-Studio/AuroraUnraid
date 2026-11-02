@@ -35,6 +35,9 @@
     if (!box) return [];
     return [...box.children].filter(function (node) {
       if (node.matches('.usage-bar, .tp-usage') || !node.matches('.nav-item, .nav-user')) return false;
+      // The buttons of the Stream Viewer and Disk Viewer plugins are not part of the Quick Actions
+      // here: they are always out of the menu (CSS) and not in the settings list.
+      if (node.matches('.StreamViewerButton, .DiskViewerButton')) return false;
       return node.children.length > 0 || node.textContent.trim() !== '';
     });
   }
@@ -66,14 +69,12 @@
 
   function quickIcon(node) {
     const icon = node.querySelector('a b, a i, a svg, a img');
-    return icon ? icon.cloneNode(true) : null;
+    if (icon) return icon.cloneNode(true);
+    return null;
   }
 
   // Whether the menu really shows the button (some plugins add empty entries).
   function quickShown(node) {
-    // Disk Viewer and Stream Viewer add a dummy button here and show their own badge in the
-    // header instead (they hide the dummy a moment after the page loads).
-    if (node.matches('.DiskViewerButton, .StreamViewerButton')) return false;
     const wasHidden = node.classList.contains('tp-qa-hidden');
     if (wasHidden) node.classList.remove('tp-qa-hidden');
     const shown = node.offsetWidth > 0 && node.offsetHeight > 0;

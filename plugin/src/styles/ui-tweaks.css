@@ -23,6 +23,8 @@ html.tp-hide-servericon #UserProfile > div ~ div > div:first-child::before {
 }
 
 /* ---- Hidden things */
+.nav-tile.right .nav-item.StreamViewerButton,
+.nav-tile.right .nav-item.DiskViewerButton,
 .tp-qa-hidden,
 .tp-hidden-item,
 .tp-hidden-group {
