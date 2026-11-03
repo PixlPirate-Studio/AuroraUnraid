@@ -3,7 +3,7 @@
 
 <PLUGIN name="AuroraUnraid"
         author="Tunefish, modified by thepixlpirate"
-        version="2026.11.03.0248"
+        version="2026.11.03.0249"
         launch="Settings/AuroraUnraidSettings"
         pluginURL="https://raw.githubusercontent.com/thepixlpirate/AuroraUnraid/release/AuroraUnraid.plg"
         support="https://github.com/thepixlpirate/AuroraUnraid/issues"
@@ -11,7 +11,7 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.11.03.0248
+###2026.11.03.0249
 - Settings page: the tabs are a drop-down menu on a phone-sized screen.
 - Quick Actions: the buttons of the Stream Viewer and Disk Viewer plugins are always out of the menu and are not in the settings list (their Dashboard tiles and pages are untouched).
 - Docker tab: the chosen sort (Application, CPU, Memory) is kept after a reload.
@@ -102,10 +102,10 @@ for OLD in Tunefish-Future-Theme Aurora-Theme; do
   fi
 done
 old=$(sed -n 's/^[[:space:]]*version="\([^"]*\)".*/\1/p' /boot/config/plugins/AuroraUnraid.plg 2>/dev/null | head -n 1)
-if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.11.03.0248" ]]; then
+if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.11.03.0249" ]]; then
   from=$(sed -n 's/.*"from":"\([^"]*\)".*/\1/p' /boot/config/plugins/AuroraUnraid/updated.json 2>/dev/null)
   [[ "$from" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ ]] || from=$old
-  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.11.03.0248" "$(date +%s)" > /boot/config/plugins/AuroraUnraid/updated.json
+  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.11.03.0249" "$(date +%s)" > /boot/config/plugins/AuroraUnraid/updated.json
 fi
 cat > /usr/local/emhttp/plugins/AuroraUnraid/AuroraUnraid.page <<'AURORA_UNRAID_EOF'
 Menu="Buttons"
@@ -221,8 +221,9 @@ $auroraUi = [
     'qaHidden' => $auroraList($aurora['qa_hidden'] ?? ''),
     'hideSettings' => $auroraList($aurora['hide_settings'] ?? ''),
     'hideTools' => $auroraList($aurora['hide_tools'] ?? ''),
-    // The Settings page can never be hidden: this plugin's settings are opened from it.
-    'hidePages' => array_values(array_diff($auroraList($aurora['hide_pages'] ?? ''), ['Settings'])),
+    // The Plugins page can never be hidden: this plugin's settings can always be opened from it
+    // (the plugin's icon in its list), even when the Settings page is out of the menu.
+    'hidePages' => array_values(array_diff($auroraList($aurora['hide_pages'] ?? ''), ['Plugins'])),
     'logo' => ['mode' => $auroraLogoMode, 'url' => $auroraLogoUrl, 'target' => (($aurora['logo_target'] ?? 'self') === 'blank') ? 'blank' : 'self'],
 ];
 $auroraHidden = json_decode((string) @file_get_contents("$auroraCustomDir/hidden-groups.json"), true);
@@ -427,7 +428,7 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
 <?php if ($auroraClasses): ?>
 <script>document.documentElement.classList.add(...<?= json_encode($auroraClasses) ?>);</script>
 <?php endif; ?>
-<?php if (substr('2026.11.03.0248', -4) === '-dev'): ?>
+<?php if (substr('2026.11.03.0249', -4) === '-dev'): ?>
 <?php // A dev build (version "...-dev", set by plugin/build.py) is installed: a "Dev" badge in the
       // top bar, linking to the settings, where the update channel goes back to stable. ?>
 <style id="aurora-dev-badge">
@@ -449,7 +450,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var badge = document.createElement('a');
   badge.className = 'tp-dev-badge';
   badge.href = '/Settings/AuroraUnraidSettings';
-  badge.title = 'AuroraUnraid dev build 2026.11.03.0248: a test version, installed because the update channel is set to dev builds. Click to change it.';
+  badge.title = 'AuroraUnraid dev build 2026.11.03.0249: a test version, installed because the update channel is set to dev builds. Click to change it.';
   badge.innerHTML = '<i aria-hidden="true"></i><span>Aurora</span><b>Dev</b>';
   // Where it goes: with the sidebar shown, on its own line under Unraid's version (the version
   // row has room for the version and its update notice only); otherwise in
@@ -607,8 +608,9 @@ _(Sidebar)_:
 _(Menu pages)_:
 : <input type="hidden" name="hide_pages" id="tft-hide-pages" value="<?= htmlspecialchars($aurora['hide_pages'] ?? '') ?>"><div id="tft-pages" class="tft-toggles">Loading…</div>
 
-> Switch off a page to take it out of the menu (the sidebar, and the drop-down on a phone). **Settings** always
-> stays, because this plugin's settings are opened from it. A hidden page can still be opened by its address.
+> Switch off a page to take it out of the menu (the sidebar, and the drop-down on a phone). **Plugins** always
+> stays: this plugin's settings can always be opened from it (click the AuroraUnraid icon in the list), also when
+> the Settings page is hidden. A hidden page can still be opened by its address.
 
 _(Top bar items)_:
 : <div class="tft-toggles"><?php foreach (['theme_switch' => 'Dark / light mode button', 'uptime' => 'Uptime and license status', 'server_icon' => 'Server icon', 'server_name' => 'Server name', 'bell' => 'Notification bell', 'menu' => 'Menu (hamburger)'] as $auroraKey => $auroraText) { echo '<input type="hidden" name="show_' . $auroraKey . '" value="no"><label class="tft-check tft-check-inline"><input type="checkbox" name="show_' . $auroraKey . '" value="yes"' . (($aurora['show_' . $auroraKey] ?? 'yes') === 'yes' ? ' checked' : '') . '> ' . htmlspecialchars(_($auroraText)) . '</label>'; } ?></div>
@@ -1048,7 +1050,7 @@ function auroraPages() {
     var now = [];
     box.querySelectorAll('input[data-key]').forEach(function (check) { if (!check.checked && !check.disabled) now.push(check.dataset.key); });
     // Pages that are not in the menu right now keep their saved choice.
-    hidden.forEach(function (key) { if (key !== 'Settings' && !box.querySelector('input[data-key="' + key + '"]') && now.indexOf(key) === -1) now.push(key); });
+    hidden.forEach(function (key) { if (key !== 'Plugins' && !box.querySelector('input[data-key="' + key + '"]') && now.indexOf(key) === -1) now.push(key); });
     field.value = now.join(',');
     auroraAnnounce(field);
   };
@@ -1061,7 +1063,7 @@ function auroraPages() {
     check.dataset.key = page.key;
     check.checked = page.locked || hidden.indexOf(page.key) === -1;
     check.disabled = page.locked;
-    if (page.locked) label.title = 'Always shown: the settings of this plugin are opened from here';
+    if (page.locked) label.title = 'Always shown: this plugin\'s settings can always be opened from the Plugins page';
     check.addEventListener('change', sync);
     label.append(check, document.createTextNode(' ' + page.label + (page.locked ? ' (always shown)' : '')));
     box.append(label);
@@ -25285,7 +25287,7 @@ cat > /boot/config/plugins/AuroraUnraid/stats.cron <<'AURORA_UNRAID_EOF'
 AURORA_UNRAID_EOF
 /usr/bin/php /usr/local/emhttp/plugins/AuroraUnraid/scripts/schedule.php
 echo ""
-echo "AuroraUnraid 2026.11.03.0248 is installed."
+echo "AuroraUnraid 2026.11.03.0249 is installed."
 echo "Settings: Settings > User Utilities > AuroraUnraid"
 echo ""
 ]]>
