@@ -524,9 +524,9 @@
 
   // The pages in the menu (Dashboard, Main, Shares, ...), by the first part of their address.
   // Hiding one only takes its entry out of the menu (the sidebar and the phone drop-down); the
-  // page can still be opened by its address. Settings stays, so this plugin's settings can
+  // page can still be opened by its address. Plugins stays, because this plugin's settings can
   // always be reached.
-  const KEEP_PAGES = new Set(['Settings']);
+  const KEEP_PAGES = new Set(['Plugins']);
 
   function navPages() {
     const pages = [];
@@ -583,12 +583,12 @@
 
   // ---------------------------------------------------------------- Docker: update count and "Force update"
 
-  // The number of containers with an update waiting, on the "Check for Updates" button. "Check
-  // for Updates" makes Unraid reload the list, which fills Unraid's own list of containers
+  // The number of containers with an update waiting, on the "Update All" button. "Check for
+  // Updates" makes Unraid reload the list, which fills Unraid's own list of containers
   // (window.docker); the count follows it.
   function applyUpdateBadge() {
     if (!/^\/Docker\/?$/.test(location.pathname)) return;
-    const button = document.getElementById('checkAll');
+    const button = document.getElementById('updateAll');
     if (!button || !button.parentElement) return;
     let wrap = button.parentElement;
     if (!wrap.classList.contains('tp-badge-wrap')) {
