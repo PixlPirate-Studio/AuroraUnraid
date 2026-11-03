@@ -99,8 +99,9 @@ _(Sidebar)_:
 _(Menu pages)_:
 : <input type="hidden" name="hide_pages" id="tft-hide-pages" value="<?= htmlspecialchars($aurora['hide_pages'] ?? '') ?>"><div id="tft-pages" class="tft-toggles">Loading…</div>
 
-> Switch off a page to take it out of the menu (the sidebar, and the drop-down on a phone). **Settings** always
-> stays, because this plugin's settings are opened from it. A hidden page can still be opened by its address.
+> Switch off a page to take it out of the menu (the sidebar, and the drop-down on a phone). **Plugins** always
+> stays: this plugin's settings can always be opened from it (click the AuroraUnraid icon in the list), also when
+> the Settings page is hidden. A hidden page can still be opened by its address.
 
 _(Top bar items)_:
 : <div class="tft-toggles"><?php foreach (['theme_switch' => 'Dark / light mode button', 'uptime' => 'Uptime and license status', 'server_icon' => 'Server icon', 'server_name' => 'Server name', 'bell' => 'Notification bell', 'menu' => 'Menu (hamburger)'] as $auroraKey => $auroraText) { echo '<input type="hidden" name="show_' . $auroraKey . '" value="no"><label class="tft-check tft-check-inline"><input type="checkbox" name="show_' . $auroraKey . '" value="yes"' . (($aurora['show_' . $auroraKey] ?? 'yes') === 'yes' ? ' checked' : '') . '> ' . htmlspecialchars(_($auroraText)) . '</label>'; } ?></div>
@@ -540,7 +541,7 @@ function auroraPages() {
     var now = [];
     box.querySelectorAll('input[data-key]').forEach(function (check) { if (!check.checked && !check.disabled) now.push(check.dataset.key); });
     // Pages that are not in the menu right now keep their saved choice.
-    hidden.forEach(function (key) { if (key !== 'Settings' && !box.querySelector('input[data-key="' + key + '"]') && now.indexOf(key) === -1) now.push(key); });
+    hidden.forEach(function (key) { if (key !== 'Plugins' && !box.querySelector('input[data-key="' + key + '"]') && now.indexOf(key) === -1) now.push(key); });
     field.value = now.join(',');
     auroraAnnounce(field);
   };
@@ -553,7 +554,7 @@ function auroraPages() {
     check.dataset.key = page.key;
     check.checked = page.locked || hidden.indexOf(page.key) === -1;
     check.disabled = page.locked;
-    if (page.locked) label.title = 'Always shown: the settings of this plugin are opened from here';
+    if (page.locked) label.title = 'Always shown: this plugin\'s settings can always be opened from the Plugins page';
     check.addEventListener('change', sync);
     label.append(check, document.createTextNode(' ' + page.label + (page.locked ? ' (always shown)' : '')));
     box.append(label);

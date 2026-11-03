@@ -111,8 +111,9 @@ $auroraUi = [
     'qaHidden' => $auroraList($aurora['qa_hidden'] ?? ''),
     'hideSettings' => $auroraList($aurora['hide_settings'] ?? ''),
     'hideTools' => $auroraList($aurora['hide_tools'] ?? ''),
-    // The Settings page can never be hidden: this plugin's settings are opened from it.
-    'hidePages' => array_values(array_diff($auroraList($aurora['hide_pages'] ?? ''), ['Settings'])),
+    // The Plugins page can never be hidden: this plugin's settings can always be opened from it
+    // (the plugin's icon in its list), even when the Settings page is out of the menu.
+    'hidePages' => array_values(array_diff($auroraList($aurora['hide_pages'] ?? ''), ['Plugins'])),
     'logo' => ['mode' => $auroraLogoMode, 'url' => $auroraLogoUrl, 'target' => (($aurora['logo_target'] ?? 'self') === 'blank') ? 'blank' : 'self'],
 ];
 $auroraHidden = json_decode((string) @file_get_contents("$auroraCustomDir/hidden-groups.json"), true);
