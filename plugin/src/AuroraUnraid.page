@@ -127,8 +127,32 @@ foreach (['theme_switch' => 'theme', 'uptime' => 'uptime', 'server_icon' => 'ser
 }
 if (($aurora['sidebar_qa'] ?? 'bottom') === 'top') $auroraTweakClasses[] = 'tp-qa-top';
 $auroraJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
+// What is hidden or re-ordered is also written as CSS here, so that it is in place before the
+// page is first drawn; the script (ui-tweaks.js) then only has to confirm it. Without this, hidden
+// items showed for a moment on every page before the script ran. Keys are plain by now (see
+// $auroraList), and no part of the CSS comes from anything else.
+$auroraHideCss = '';
+$auroraLinkTo = function ($path) {
+    return ':is([href="/' . $path . '"],[href^="/' . $path . '/"],[href^="/' . $path . '?"])';
+};
+foreach ($auroraUi['hidePages'] as $auroraKey) {
+    $auroraHideCss .= '#menu .nav-tile:not(.right) > .nav-item:has(> a' . $auroraLinkTo($auroraKey) . '){display:none!important}';
+}
+foreach (array_merge($auroraUi['hideSettings'], $auroraUi['hideTools']) as $auroraKey) {
+    if ($auroraKey === 'Settings/AuroraUnraidSettings') continue;
+    $auroraHideCss .= '.Panel:has(a:is([href="/' . $auroraKey . '"],[href^="/' . $auroraKey . '?"])){display:none!important}';
+}
+$auroraClassKey = '/^[A-Za-z_][A-Za-z0-9_-]*(\.[A-Za-z_][A-Za-z0-9_-]*)*$/';
+foreach ($auroraUi['qaHidden'] as $auroraKey) {
+    if (preg_match($auroraClassKey, $auroraKey)) $auroraHideCss .= '.nav-tile.right > .nav-item.' . $auroraKey . '{display:none!important}';
+    elseif (strpos($auroraKey, 'href:') === 0 && preg_match('/^[A-Za-z0-9_.-]+$/', substr($auroraKey, 5))) $auroraHideCss .= '.nav-tile.right > .nav-item:has(> a[href$="/' . substr($auroraKey, 5) . '"]){display:none!important}';
+}
+foreach ($auroraUi['qaOrder'] as $auroraIndex => $auroraKey) {
+    if (preg_match($auroraClassKey, $auroraKey)) $auroraHideCss .= '.nav-tile.right > .nav-item.' . $auroraKey . '{order:' . ($auroraIndex + 1) . '}';
+}
 ?>
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/AuroraUnraid/styles/ui-tweaks.css') ?>">
+<style id="aurora-hide"><?= $auroraHideCss ?></style>
 <script>
 window.auroraUi = <?= json_encode($auroraUi, $auroraJsonFlags) ?>;
 window.auroraHidden = <?= json_encode($auroraHidden, $auroraJsonFlags) ?>;

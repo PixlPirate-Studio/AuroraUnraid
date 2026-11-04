@@ -150,6 +150,7 @@ plg = f"""<?xml version='1.0' standalone='yes'?>
 - Docker tab: the chosen sort (Application, CPU, Memory) is kept after a reload.
 - Settings: switches to take pages out of the main menu (Plugins always stays, so this plugin's settings can be reached from the plugin's icon in its list).
 - Phones: adding or updating a container no longer makes the page zoom out to the desktop layout.
+- Hidden menu pages, Settings / Tools tiles and Quick Actions are hidden by CSS written into the page head, so they no longer show for a moment on every page load.
 - Docker tab: the number of containers with an update waiting shows on the "Update All" button (it follows "Check for Updates"); the "..." menu of a container has "Force update" (it was in the Advanced view only).
 - Quick Actions: the lock button is on every page (away from the Dashboard it opens the Dashboard already unlocked).
 - Settings page, Quick Actions list: smooth dragging; a dashed space opens where the button will land and the others slide aside; works with a finger too.
