@@ -3,7 +3,7 @@
 
 <PLUGIN name="AuroraUnraid"
         author="Tunefish, modified by thepixlpirate"
-        version="2026.11.03.0250"
+        version="2026.11.04.0815"
         launch="Settings/AuroraUnraidSettings"
         pluginURL="https://raw.githubusercontent.com/thepixlpirate/AuroraUnraid/release/AuroraUnraid.plg"
         support="https://github.com/thepixlpirate/AuroraUnraid/issues"
@@ -11,12 +11,13 @@
         min="7.2.0">
 
 <CHANGES>
-###2026.11.03.0250
+###2026.11.04.0815
 - Settings page: the tabs are a drop-down menu on a phone-sized screen.
 - Quick Actions: the buttons of the Stream Viewer and Disk Viewer plugins are always out of the menu and are not in the settings list (their Dashboard tiles and pages are untouched).
 - Docker tab: the chosen sort (Application, CPU, Memory) is kept after a reload.
 - Settings: switches to take pages out of the main menu (Plugins always stays, so this plugin's settings can be reached from the plugin's icon in its list).
 - Phones: adding or updating a container no longer makes the page zoom out to the desktop layout.
+- Hidden menu pages, Settings / Tools tiles and Quick Actions are hidden by CSS written into the page head, so they no longer show for a moment on every page load.
 - Docker tab: the number of containers with an update waiting shows on the "Update All" button (it follows "Check for Updates"); the "..." menu of a container has "Force update" (it was in the Advanced view only).
 - Quick Actions: the lock button is on every page (away from the Dashboard it opens the Dashboard already unlocked).
 - Settings page, Quick Actions list: smooth dragging; a dashed space opens where the button will land and the others slide aside; works with a finger too.
@@ -102,10 +103,10 @@ for OLD in Tunefish-Future-Theme Aurora-Theme; do
   fi
 done
 old=$(sed -n 's/^[[:space:]]*version="\([^"]*\)".*/\1/p' /boot/config/plugins/AuroraUnraid.plg 2>/dev/null | head -n 1)
-if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.11.03.0250" ]]; then
+if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.11.04.0815" ]]; then
   from=$(sed -n 's/.*"from":"\([^"]*\)".*/\1/p' /boot/config/plugins/AuroraUnraid/updated.json 2>/dev/null)
   [[ "$from" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ ]] || from=$old
-  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.11.03.0250" "$(date +%s)" > /boot/config/plugins/AuroraUnraid/updated.json
+  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.11.04.0815" "$(date +%s)" > /boot/config/plugins/AuroraUnraid/updated.json
 fi
 cat > /usr/local/emhttp/plugins/AuroraUnraid/AuroraUnraid.page <<'AURORA_UNRAID_EOF'
 Menu="Buttons"
@@ -237,8 +238,32 @@ foreach (['theme_switch' => 'theme', 'uptime' => 'uptime', 'server_icon' => 'ser
 }
 if (($aurora['sidebar_qa'] ?? 'bottom') === 'top') $auroraTweakClasses[] = 'tp-qa-top';
 $auroraJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
+// What is hidden or re-ordered is also written as CSS here, so that it is in place before the
+// page is first drawn; the script (ui-tweaks.js) then only has to confirm it. Without this, hidden
+// items showed for a moment on every page before the script ran. Keys are plain by now (see
+// $auroraList), and no part of the CSS comes from anything else.
+$auroraHideCss = '';
+$auroraLinkTo = function ($path) {
+    return ':is([href="/' . $path . '"],[href^="/' . $path . '/"],[href^="/' . $path . '?"])';
+};
+foreach ($auroraUi['hidePages'] as $auroraKey) {
+    $auroraHideCss .= '#menu .nav-tile:not(.right) > .nav-item:has(> a' . $auroraLinkTo($auroraKey) . '){display:none!important}';
+}
+foreach (array_merge($auroraUi['hideSettings'], $auroraUi['hideTools']) as $auroraKey) {
+    if ($auroraKey === 'Settings/AuroraUnraidSettings') continue;
+    $auroraHideCss .= '.Panel:has(a:is([href="/' . $auroraKey . '"],[href^="/' . $auroraKey . '?"])){display:none!important}';
+}
+$auroraClassKey = '/^[A-Za-z_][A-Za-z0-9_-]*(\.[A-Za-z_][A-Za-z0-9_-]*)*$/';
+foreach ($auroraUi['qaHidden'] as $auroraKey) {
+    if (preg_match($auroraClassKey, $auroraKey)) $auroraHideCss .= '.nav-tile.right > .nav-item.' . $auroraKey . '{display:none!important}';
+    elseif (strpos($auroraKey, 'href:') === 0 && preg_match('/^[A-Za-z0-9_.-]+$/', substr($auroraKey, 5))) $auroraHideCss .= '.nav-tile.right > .nav-item:has(> a[href$="/' . substr($auroraKey, 5) . '"]){display:none!important}';
+}
+foreach ($auroraUi['qaOrder'] as $auroraIndex => $auroraKey) {
+    if (preg_match($auroraClassKey, $auroraKey)) $auroraHideCss .= '.nav-tile.right > .nav-item.' . $auroraKey . '{order:' . ($auroraIndex + 1) . '}';
+}
 ?>
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/AuroraUnraid/styles/ui-tweaks.css') ?>">
+<style id="aurora-hide"><?= $auroraHideCss ?></style>
 <script>
 window.auroraUi = <?= json_encode($auroraUi, $auroraJsonFlags) ?>;
 window.auroraHidden = <?= json_encode($auroraHidden, $auroraJsonFlags) ?>;
@@ -428,7 +453,7 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
 <?php if ($auroraClasses): ?>
 <script>document.documentElement.classList.add(...<?= json_encode($auroraClasses) ?>);</script>
 <?php endif; ?>
-<?php if (substr('2026.11.03.0250', -4) === '-dev'): ?>
+<?php if (substr('2026.11.04.0815', -4) === '-dev'): ?>
 <?php // A dev build (version "...-dev", set by plugin/build.py) is installed: a "Dev" badge in the
       // top bar, linking to the settings, where the update channel goes back to stable. ?>
 <style id="aurora-dev-badge">
@@ -450,7 +475,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var badge = document.createElement('a');
   badge.className = 'tp-dev-badge';
   badge.href = '/Settings/AuroraUnraidSettings';
-  badge.title = 'AuroraUnraid dev build 2026.11.03.0250: a test version, installed because the update channel is set to dev builds. Click to change it.';
+  badge.title = 'AuroraUnraid dev build 2026.11.04.0815: a test version, installed because the update channel is set to dev builds. Click to change it.';
   badge.innerHTML = '<i aria-hidden="true"></i><span>Aurora</span><b>Dev</b>';
   // Where it goes: with the sidebar shown, on its own line under Unraid's version (the version
   // row has room for the version and its update notice only); otherwise in
@@ -25287,7 +25312,7 @@ cat > /boot/config/plugins/AuroraUnraid/stats.cron <<'AURORA_UNRAID_EOF'
 AURORA_UNRAID_EOF
 /usr/bin/php /usr/local/emhttp/plugins/AuroraUnraid/scripts/schedule.php
 echo ""
-echo "AuroraUnraid 2026.11.03.0250 is installed."
+echo "AuroraUnraid 2026.11.04.0815 is installed."
 echo "Settings: Settings > User Utilities > AuroraUnraid"
 echo ""
 ]]>
