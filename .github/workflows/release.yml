@@ -4,7 +4,7 @@ name: Build and release AuroraUnraid
 # GitHub release (tag v<version>, the .plg attached) and puts the same file on the "release"
 # branch. Unraid's Plugins page and the plugin's own update check look there, so a server
 # installed from the address below sees each new build as an update:
-#   https://raw.githubusercontent.com/thepixlpirate/AuroraUnraid/release/AuroraUnraid.plg
+#   https://raw.githubusercontent.com/PixlPirate-Studio/AuroraUnraid/release/AuroraUnraid.plg
 on:
   push:
     branches: [main]

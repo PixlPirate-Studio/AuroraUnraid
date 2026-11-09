@@ -15,7 +15,7 @@ from xml.sax.saxutils import escape
 NAME = "AuroraUnraid"
 AUTHOR = "Tunefish, modified by thepixlpirate"
 # GitHub repository: updates are checked there and the settings page opens issues there.
-GITHUB_REPO = "thepixlpirate/AuroraUnraid"
+GITHUB_REPO = "PixlPirate-Studio/AuroraUnraid"
 # Unraid's Plugins page downloads this file on every visit to see whether an update is out. It is
 # the newest release's .plg on the "release" branch, which plugin/release.py updates with each
 # GitHub release and nothing else touches. raw.githubusercontent.com answers in one request
@@ -171,7 +171,7 @@ plg = f"""<?xml version='1.0' standalone='yes'?>
 - Apps: the categories menu can be folded away; the choice is kept.
 - Dashboard: tiles are plain cards like the Plugins page, without boxes inside boxes.
 - Removed: "Feedback and issues" and "Your own changes" on the settings page, the footer "manual" and theme buttons.
-- Every push to main builds and publishes a release (GitHub Actions); updates come from github.com/thepixlpirate/AuroraUnraid.
+- Every push to main builds and publishes a release (GitHub Actions); updates come from github.com/PixlPirate-Studio/AuroraUnraid.
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.

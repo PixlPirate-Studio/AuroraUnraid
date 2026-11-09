@@ -3,7 +3,7 @@
 [![Buy me a coffee](https://img.shields.io/badge/Buy_me_a_coffee-PayPal-0070ba?style=for-the-badge&logo=paypal&logoColor=white)](https://paypal.me/tunefish92)
 
 > [!WARNING]
-> **AuroraUnraid is still at an early stage.** It is used on real servers, but it touches almost every page of the webGUI, and not every setup, plugin or screen size has been tried yet. Expect rough edges. I'm relying on feedback from the whole community to make it more stable, fix bugs and add features: if something looks wrong or you have an idea, please [open an issue](https://github.com/thepixlpirate/AuroraUnraid/issues). The settings page can fill one in for you, including the system details. If a page ever becomes unusable, add `?aurora=off` to its address to switch the theme off in that browser (see [If something looks wrong](#if-something-looks-wrong)).
+> **AuroraUnraid is still at an early stage.** It is used on real servers, but it touches almost every page of the webGUI, and not every setup, plugin or screen size has been tried yet. Expect rough edges. I'm relying on feedback from the whole community to make it more stable, fix bugs and add features: if something looks wrong or you have an idea, please [open an issue](https://github.com/PixlPirate-Studio/AuroraUnraid/issues). The settings page can fill one in for you, including the system details. If a page ever becomes unusable, add `?aurora=off` to its address to switch the theme off in that browser (see [If something looks wrong](#if-something-looks-wrong)).
 
 A modern theme plugin for the Unraid webGUI: new colours and fonts, an optional sidebar layout, a card-based Dashboard, a redesigned Main page, a compact Docker list with groups, and a built-in Stats page. Dark and light, with a one-click switch, and it works on phones.
 
@@ -34,13 +34,13 @@ A modern theme plugin for the Unraid webGUI: new colours and fonts, an optional 
 In Unraid, go to **Plugins → Install Plugin**, paste this address and click **Install**:
 
 ```
-https://github.com/thepixlpirate/AuroraUnraid/releases/latest/download/AuroraUnraid.plg
+https://github.com/PixlPirate-Studio/AuroraUnraid/releases/latest/download/AuroraUnraid.plg
 ```
 
 Or over SSH:
 
 ```
-plugin install https://github.com/thepixlpirate/AuroraUnraid/releases/latest/download/AuroraUnraid.plg
+plugin install https://github.com/PixlPirate-Studio/AuroraUnraid/releases/latest/download/AuroraUnraid.plg
 ```
 
 Requires Unraid 7.2 or newer. The theme follows the Dynamix colour theme in *Settings → Display Settings*: **Black** gives the dark look, **White** the light one; the round button at the top right switches between the two. Other Dynamix themes are left unchanged.
@@ -72,7 +72,7 @@ Between releases, new fixes and features first come out as dev builds. To try th
 - Remove it under **Plugins**, or with `plugin remove AuroraUnraid.plg` over SSH. This also restores Unraid's own login page.
 - Your own CSS and JavaScript can go in `/boot/config/plugins/AuroraUnraid/custom.css` and `custom.js`; they load after the theme and survive updates.
 
-Please report bugs and ideas as [issues](https://github.com/thepixlpirate/AuroraUnraid/issues); the settings page can fill one in for you, including the system details.
+Please report bugs and ideas as [issues](https://github.com/PixlPirate-Studio/AuroraUnraid/issues); the settings page can fill one in for you, including the system details.
 
 ## Building from source
 
