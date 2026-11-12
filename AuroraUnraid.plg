@@ -3,20 +3,21 @@
 
 <PLUGIN name="AuroraUnraid"
         author="Tunefish, modified by thepixlpirate"
-        version="2026.11.09.0225"
+        version="2026.11.12.0636"
         launch="Settings/AuroraUnraidSettings"
-        pluginURL="https://raw.githubusercontent.com/PixlPirate-Studio/AuroraUnraid/release/AuroraUnraid.plg"
-        support="https://github.com/PixlPirate-Studio/AuroraUnraid/issues"
+        pluginURL="https://raw.githubusercontent.com/thepixlpirate/AuroraUnraid/release/AuroraUnraid.plg"
+        support="https://github.com/thepixlpirate/AuroraUnraid/issues"
         icon="paint-brush"
         min="7.2.0">
 
 <CHANGES>
-###2026.11.09.0225
+###2026.11.12.0636
 - Settings page: the tabs are a drop-down menu on a phone-sized screen.
 - Quick Actions: the buttons of the Stream Viewer and Disk Viewer plugins are always out of the menu and are not in the settings list (their Dashboard tiles and pages are untouched).
 - Docker tab: the chosen sort (Application, CPU, Memory) is kept after a reload.
 - Settings: switches to take pages out of the main menu (Plugins always stays, so this plugin's settings can be reached from the plugin's icon in its list).
 - Phones: adding or updating a container no longer makes the page zoom out to the desktop layout.
+- Dashboard: the Docker tile uses the Application order chosen on the Docker tab (A to Z or Z to A).
 - Hidden menu pages, Settings / Tools tiles and Quick Actions are hidden by CSS written into the page head, so they no longer show for a moment on every page load.
 - Docker tab: the number of containers with an update waiting shows on the "Update All" button (it follows "Check for Updates"); the "..." menu of a container has "Force update" (it was in the Advanced view only).
 - Quick Actions: the lock button is on every page (away from the Dashboard it opens the Dashboard already unlocked).
@@ -38,7 +39,7 @@
 - Apps: the categories menu can be folded away; the choice is kept.
 - Dashboard: tiles are plain cards like the Plugins page, without boxes inside boxes.
 - Removed: "Feedback and issues" and "Your own changes" on the settings page, the footer "manual" and theme buttons.
-- Every push to main builds and publishes a release (GitHub Actions); updates come from github.com/PixlPirate-Studio/AuroraUnraid.
+- Every push to main builds and publishes a release (GitHub Actions); updates come from github.com/thepixlpirate/AuroraUnraid.
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
@@ -103,10 +104,10 @@ for OLD in Tunefish-Future-Theme Aurora-Theme; do
   fi
 done
 old=$(sed -n 's/^[[:space:]]*version="\([^"]*\)".*/\1/p' /boot/config/plugins/AuroraUnraid.plg 2>/dev/null | head -n 1)
-if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.11.09.0225" ]]; then
+if [[ "$old" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ && "$old" != "2026.11.12.0636" ]]; then
   from=$(sed -n 's/.*"from":"\([^"]*\)".*/\1/p' /boot/config/plugins/AuroraUnraid/updated.json 2>/dev/null)
   [[ "$from" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}[A-Za-z0-9._-]*$ ]] || from=$old
-  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.11.09.0225" "$(date +%s)" > /boot/config/plugins/AuroraUnraid/updated.json
+  printf '{"from":"%s","to":"%s","time":%s}\n' "$from" "2026.11.12.0636" "$(date +%s)" > /boot/config/plugins/AuroraUnraid/updated.json
 fi
 cat > /usr/local/emhttp/plugins/AuroraUnraid/AuroraUnraid.page <<'AURORA_UNRAID_EOF'
 Menu="Buttons"
@@ -453,7 +454,7 @@ if (in_array(rtrim((string) parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PAT
 <?php if ($auroraClasses): ?>
 <script>document.documentElement.classList.add(...<?= json_encode($auroraClasses) ?>);</script>
 <?php endif; ?>
-<?php if (substr('2026.11.09.0225', -4) === '-dev'): ?>
+<?php if (substr('2026.11.12.0636', -4) === '-dev'): ?>
 <?php // A dev build (version "...-dev", set by plugin/build.py) is installed: a "Dev" badge in the
       // top bar, linking to the settings, where the update channel goes back to stable. ?>
 <style id="aurora-dev-badge">
@@ -475,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var badge = document.createElement('a');
   badge.className = 'tp-dev-badge';
   badge.href = '/Settings/AuroraUnraidSettings';
-  badge.title = 'AuroraUnraid dev build 2026.11.09.0225: a test version, installed because the update channel is set to dev builds. Click to change it.';
+  badge.title = 'AuroraUnraid dev build 2026.11.12.0636: a test version, installed because the update channel is set to dev builds. Click to change it.';
   badge.innerHTML = '<i aria-hidden="true"></i><span>Aurora</span><b>Dev</b>';
   // Where it goes: with the sidebar shown, on its own line under Unraid's version (the version
   // row has room for the version and its update notice only); otherwise in
@@ -1127,7 +1128,7 @@ $auroraAuto = json_decode((string) @file_get_contents('/var/lib/auroraunraid/aut
 if (!empty($auroraAuto['version']) && (string) $auroraAuto['version'] !== $auroraInstalled) $auroraAuto = [];
 $auroraAutoOn = ($aurora['autoupdate'] ?? 'yes') === 'yes';
 $auroraAutoNewer = ($auroraAuto['result'] ?? '') !== 'updated' && !empty($auroraAuto['version']) && strcmp((string) $auroraAuto['version'], $auroraInstalled) > 0;
-$auroraRepo = 'PixlPirate-Studio/AuroraUnraid';
+$auroraRepo = 'thepixlpirate/AuroraUnraid';
 ?>
 <link type="text/css" rel="stylesheet" href="<?php autov('/plugins/AuroraUnraid/styles/settings.css') ?>">
 <div class="title"><span class="left"><i class="fa fa-cloud-download title"></i>_(Update)_</span></div>
@@ -5521,7 +5522,7 @@ cat > /usr/local/emhttp/plugins/AuroraUnraid/include/UpdateLib.php <<'AURORA_UNR
 // and older than any later one.
 
 const AURORA_PLUGIN = 'AuroraUnraid';
-const AURORA_REPO = 'PixlPirate-Studio/AuroraUnraid';
+const AURORA_REPO = 'thepixlpirate/AuroraUnraid';
 const AURORA_RELEASE_API = 'https://api.github.com/repos/' . AURORA_REPO . '/releases/latest';
 const AURORA_RELEASES_API = 'https://api.github.com/repos/' . AURORA_REPO . '/releases?per_page=30';
 const AURORA_RELEASE_PLG = 'https://github.com/' . AURORA_REPO . '/releases/latest/download/' . AURORA_PLUGIN . '.plg';
@@ -8972,6 +8973,17 @@ cat > /usr/local/emhttp/plugins/AuroraUnraid/scripts/enhance.js <<'AURORA_UNRAID
       return part;
     };
 
+    // The order chosen on the Docker tab (Application, A to Z or Z to A) is used here too. A CPU
+    // or Memory order is a one-time snapshot of that tab and is not repeated here.
+    const sortByTabOrder = function (items) {
+      if (type === 'vm') return items;
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem('auroraunraid.dockerSort') || 'null'); } catch (error) { return items; }
+      if (!saved || saved.column !== 'name' || (saved.direction !== 1 && saved.direction !== -1)) return items;
+      const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+      return items.slice().sort(function (a, b) { return saved.direction * collator.compare(chipName(a), chipName(b)); });
+    };
+
     const arrange = function () {
       const first = view.querySelector('td > span.outer.' + kind + ':not(.tp-group-chip), td > .tp-group-panel');
       if (!first) return;
@@ -8996,7 +9008,7 @@ cat > /usr/local/emhttp/plugins/AuroraUnraid/scripts/enhance.js <<'AURORA_UNRAID
       });
       sections.forEach(function (section) {
         const part = groupPart(section.name, section.key);
-        const members = section.members;
+        const members = sortByTabOrder(section.members);
         if (!members.length) {
           part.chip.remove();
           part.panel.remove();
@@ -9018,7 +9030,7 @@ cat > /usr/local/emhttp/plugins/AuroraUnraid/scripts/enhance.js <<'AURORA_UNRAID
         part.panel.hidden = isCollapsed;
         wanted.push(part.chip, part.panel);
       });
-      const loose = chips.filter(function (chip) { return !placed.has(chip); });
+      const loose = sortByTabOrder(chips.filter(function (chip) { return !placed.has(chip); }));
       if (wanted.length && loose.length) wanted.push(divider);
       else divider.remove();
       wanted.push(...loose);
@@ -11809,7 +11821,7 @@ cat > /usr/local/emhttp/plugins/AuroraUnraid/scripts/updated.js <<'AURORA_UNRAID
       const block = element('section', 'tp-upd-release');
       const title = element('div', 'tp-upd-release-head');
       const name = element('a', 'tp-upd-release-version', release.version);
-      name.href = release.page || 'https://github.com/PixlPirate-Studio/AuroraUnraid/releases';
+      name.href = release.page || 'https://github.com/thepixlpirate/AuroraUnraid/releases';
       name.target = '_blank';
       name.rel = 'noopener';
       title.append(name);
@@ -11822,7 +11834,7 @@ cat > /usr/local/emhttp/plugins/AuroraUnraid/scripts/updated.js <<'AURORA_UNRAID
 
     const actions = element('div', 'tp-upd-actions');
     const link = element('a', 'tp-upd-button', 'Release notes on GitHub');
-    link.href = info.page || 'https://github.com/PixlPirate-Studio/AuroraUnraid/releases';
+    link.href = info.page || 'https://github.com/thepixlpirate/AuroraUnraid/releases';
     link.target = '_blank';
     link.rel = 'noopener';
     const settings = element('a', 'tp-upd-button', 'Settings');
@@ -25312,7 +25324,7 @@ cat > /boot/config/plugins/AuroraUnraid/stats.cron <<'AURORA_UNRAID_EOF'
 AURORA_UNRAID_EOF
 /usr/bin/php /usr/local/emhttp/plugins/AuroraUnraid/scripts/schedule.php
 echo ""
-echo "AuroraUnraid 2026.11.09.0225 is installed."
+echo "AuroraUnraid 2026.11.12.0636 is installed."
 echo "Settings: Settings > User Utilities > AuroraUnraid"
 echo ""
 ]]>
