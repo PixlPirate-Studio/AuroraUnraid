@@ -2451,6 +2451,17 @@
       return part;
     };
 
+    // The order chosen on the Docker tab (Application, A to Z or Z to A) is used here too. A CPU
+    // or Memory order is a one-time snapshot of that tab and is not repeated here.
+    const sortByTabOrder = function (items) {
+      if (type === 'vm') return items;
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem('auroraunraid.dockerSort') || 'null'); } catch (error) { return items; }
+      if (!saved || saved.column !== 'name' || (saved.direction !== 1 && saved.direction !== -1)) return items;
+      const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+      return items.slice().sort(function (a, b) { return saved.direction * collator.compare(chipName(a), chipName(b)); });
+    };
+
     const arrange = function () {
       const first = view.querySelector('td > span.outer.' + kind + ':not(.tp-group-chip), td > .tp-group-panel');
       if (!first) return;
@@ -2475,7 +2486,7 @@
       });
       sections.forEach(function (section) {
         const part = groupPart(section.name, section.key);
-        const members = section.members;
+        const members = sortByTabOrder(section.members);
         if (!members.length) {
           part.chip.remove();
           part.panel.remove();
@@ -2497,7 +2508,7 @@
         part.panel.hidden = isCollapsed;
         wanted.push(part.chip, part.panel);
       });
-      const loose = chips.filter(function (chip) { return !placed.has(chip); });
+      const loose = sortByTabOrder(chips.filter(function (chip) { return !placed.has(chip); }));
       if (wanted.length && loose.length) wanted.push(divider);
       else divider.remove();
       wanted.push(...loose);

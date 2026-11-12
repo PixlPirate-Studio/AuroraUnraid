@@ -15,7 +15,7 @@ from xml.sax.saxutils import escape
 NAME = "AuroraUnraid"
 AUTHOR = "Tunefish, modified by thepixlpirate"
 # GitHub repository: updates are checked there and the settings page opens issues there.
-GITHUB_REPO = "PixlPirate-Studio/AuroraUnraid"
+GITHUB_REPO = "thepixlpirate/AuroraUnraid"
 # Unraid's Plugins page downloads this file on every visit to see whether an update is out. It is
 # the newest release's .plg on the "release" branch, which plugin/release.py updates with each
 # GitHub release and nothing else touches. raw.githubusercontent.com answers in one request
@@ -150,6 +150,7 @@ plg = f"""<?xml version='1.0' standalone='yes'?>
 - Docker tab: the chosen sort (Application, CPU, Memory) is kept after a reload.
 - Settings: switches to take pages out of the main menu (Plugins always stays, so this plugin's settings can be reached from the plugin's icon in its list).
 - Phones: adding or updating a container no longer makes the page zoom out to the desktop layout.
+- Dashboard: the Docker tile uses the Application order chosen on the Docker tab (A to Z or Z to A).
 - Hidden menu pages, Settings / Tools tiles and Quick Actions are hidden by CSS written into the page head, so they no longer show for a moment on every page load.
 - Docker tab: the number of containers with an update waiting shows on the "Update All" button (it follows "Check for Updates"); the "..." menu of a container has "Force update" (it was in the Advanced view only).
 - Quick Actions: the lock button is on every page (away from the Dashboard it opens the Dashboard already unlocked).
@@ -171,7 +172,7 @@ plg = f"""<?xml version='1.0' standalone='yes'?>
 - Apps: the categories menu can be folded away; the choice is kept.
 - Dashboard: tiles are plain cards like the Plugins page, without boxes inside boxes.
 - Removed: "Feedback and issues" and "Your own changes" on the settings page, the footer "manual" and theme buttons.
-- Every push to main builds and publishes a release (GitHub Actions); updates come from github.com/PixlPirate-Studio/AuroraUnraid.
+- Every push to main builds and publishes a release (GitHub Actions); updates come from github.com/thepixlpirate/AuroraUnraid.
 - New colours, fonts, tables, buttons, dialogs and notification panel for the Black and White themes.
 - Optional sidebar navigation layout.
 - Page enhancements: brand and server card in the sidebar, slim top bar, page headings, status pills, Docker summary and filters.
