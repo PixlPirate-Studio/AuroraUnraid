@@ -150,6 +150,7 @@ plg = f"""<?xml version='1.0' standalone='yes'?>
 - Docker tab: the chosen sort (Application, CPU, Memory) is kept after a reload.
 - Settings: switches to take pages out of the main menu (Plugins always stays, so this plugin's settings can be reached from the plugin's icon in its list).
 - Phones: adding or updating a container no longer makes the page zoom out to the desktop layout.
+- Dashboard: the Stream Viewer and Disk Viewer cards have the same header as the other cards (icon tile, title, small line, buttons) instead of the plugins' own picture and spacing.
 - Dashboard: the Docker tile uses the Application order chosen on the Docker tab (A to Z or Z to A).
 - Hidden menu pages, Settings / Tools tiles and Quick Actions are hidden by CSS written into the page head, so they no longer show for a moment on every page load.
 - Docker tab: the number of containers with an update waiting shows on the "Update All" button (it follows "Check for Updates"); the "..." menu of a container has "Force update" (it was in the Advanced view only).

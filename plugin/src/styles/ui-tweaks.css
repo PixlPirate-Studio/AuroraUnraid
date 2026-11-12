@@ -439,3 +439,77 @@ table.dashboard span.outer.solid.tp-group-chip:not(.tp-collapsed) .tp-group-apps
     opacity: 0.55;
     cursor: not-allowed;
 }
+
+/* ---- Stream Viewer and Disk Viewer cards: the same header as the other cards (an icon tile on the
+   left, the title and the small line under it, the buttons on the right) instead of the
+   plugins' own picture and spacing. */
+:root:root table.dashboard :is(.dv-header, .sv-header) {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1.4rem !important;
+}
+
+:root:root table.dashboard :is(.dv-header__left, .sv-header__left) {
+    display: grid !important;
+    flex: 1 1 auto;
+    min-width: 0;
+    grid-template-columns: 4.4rem minmax(0, 1fr);
+    grid-template-areas: "icon title" "icon meta";
+    align-items: center;
+    column-gap: 1.4rem;
+    row-gap: 0.2rem;
+    overflow: visible !important;
+}
+
+:root:root table.dashboard :is(.dv-header__top, .sv-header__top) {
+    display: contents !important;
+}
+
+:root:root table.dashboard :is(.dv-header__icon, .sv-header__icon) {
+    display: none !important;
+}
+
+:root:root table.dashboard :is(.dv-header__top, .sv-header__top)::before {
+    content: "";
+    grid-area: icon;
+    box-sizing: border-box;
+    width: 4.4rem;
+    height: 4.4rem;
+    border: 1px solid var(--tp-border);
+    border-radius: var(--tp-r-md);
+    background-color: var(--tp-icon-tile);
+}
+
+:root:root table.dashboard :is(.dv-header__top, .sv-header__top)::after {
+    content: "";
+    grid-area: icon;
+    place-self: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    background-color: var(--tp-primary);
+    -webkit-mask: var(--tp-viewer-icon) center / contain no-repeat;
+    mask: var(--tp-viewer-icon) center / contain no-repeat;
+}
+
+:root:root table.dashboard .dv-header__top {
+    --tp-viewer-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 12H2'/%3E%3Cpath d='M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z'/%3E%3Cpath d='M6 16h.01M10 16h.01'/%3E%3C/svg%3E");
+}
+
+:root:root table.dashboard .sv-header__top {
+    --tp-viewer-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpath d='m10 8 6 4-6 4z'/%3E%3C/svg%3E");
+}
+
+:root:root table.dashboard :is(.dv-header__title, .sv-header__title) {
+    grid-area: title;
+    margin: 0 !important;
+}
+
+:root:root table.dashboard :is(.dv-header-meta, .sv-header-meta) {
+    grid-area: meta;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+:root:root table.dashboard :is(.dv-header__right, .sv-header__right) {
+    align-self: center;
+}
